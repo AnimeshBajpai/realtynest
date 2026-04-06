@@ -4,8 +4,9 @@ dist/
 *.log
 
 # Deployment artifacts
-app_logs*
+app_logs*/
 logs*/
+server_logs*/
 server-test-deploy.zip
 server/deploy_test/
 server/startup.sh
