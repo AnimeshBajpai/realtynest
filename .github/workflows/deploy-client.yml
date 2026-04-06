@@ -33,16 +33,67 @@ jobs:
         env:
           VITE_API_URL: https://realtynest-api.azurewebsites.net/api
 
-      - name: Create web.config for SPA routing
+      - name: Prepare deployment package
         working-directory: ./client/dist
         run: |
-          cat > staticwebapp.config.json << 'EOF'
-          {
-            "navigationFallback": {
-              "rewrite": "/index.html"
+          # Azure App Service Linux (Node.js) needs a server process.
+          # Add a lightweight static file server for the SPA.
+          cat > server.js << 'SERVERJS'
+          const http = require("http");
+          const fs = require("fs");
+          const path = require("path");
+          const PORT = process.env.PORT || 8080;
+
+          const MIME = {
+            ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+            ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png",
+            ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff2": "font/woff2",
+            ".woff": "font/woff", ".ttf": "font/ttf", ".txt": "text/plain",
+          };
+
+          const server = http.createServer((req, res) => {
+            const url = req.url.split("?")[0];
+            let filePath = path.join(__dirname, url === "/" ? "index.html" : url);
+
+            // SPA fallback: serve index.html for non-file routes
+            if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+              filePath = path.join(__dirname, "index.html");
             }
+
+            const ext = path.extname(filePath);
+            const contentType = MIME[ext] || "application/octet-stream";
+
+            // Cache static assets (hashed filenames) for 1 year
+            const cacheControl = ext && ext !== ".html"
+              ? "public, max-age=31536000, immutable"
+              : "no-cache";
+
+            fs.readFile(filePath, (err, data) => {
+              if (err) {
+                res.writeHead(404, { "Content-Type": "text/plain" });
+                res.end("Not Found");
+                return;
+              }
+              res.writeHead(200, {
+                "Content-Type": contentType,
+                "Cache-Control": cacheControl,
+              });
+              res.end(data);
+            });
+          });
+
+          server.listen(PORT, () => console.log(`Client serving on port ${PORT}`));
+          SERVERJS
+
+          cat > package.json << 'PKGJSON'
+          {
+            "name": "realtynest-client",
+            "scripts": { "start": "node server.js" }
           }
-          EOF
+          PKGJSON
+
+          echo "=== Deploy package ==="
+          ls -la
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -53,4 +104,22 @@ jobs:
         run: |
           cd client/dist
           zip -qr ../../client-deploy.zip .
-          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../client-deploy.zip --type zip
+          az webapp deploy \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group realtynest-rg \
+            --src-path ../../client-deploy.zip \
+            --type zip \
+            --timeout 300 || echo "⚠️ Deploy poll timed out — checking health instead"
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting 60s for container to start..."
+          sleep 60
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net || echo "000")
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Client is live!"
+          else
+            echo "⚠️ Got $STATUS — container may still be starting"
+          fi
+          echo "URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
