@@ -1,0 +1,8 @@
+<step title="Incoming Request" date="2026-04-06T09:25:51.954" instance="a2c1e1" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-04-06_09-25-51Z" method="GET" type="request" pid="835,1,19" Host="realtynest-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_473aeef9659edb76842059deefb14ef6e543d31c02b62446c3df72263aab17f2_v3.0.8" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5; ARRAffinitySameSite=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5" Content-Length="0" X-ARR-LOG-ID="313c72dc-c826-4ccc-ae0c-a21608508510" CLIENT-IP="172.172.158.4:56321" X-SITE-DEPLOYMENT-ID="realtynest-api" WAS-DEFAULT-HOSTNAME="realtynest-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-04-06_09-25-51Z" X-Client-IP="172.172.158.4" X-Client-Port="56321" >
+  <step title="DeploymentService.GetResult" date="2026-04-06T09:25:51.971" >
+    <step title="DeploymentService.GetLatestDeployment" date="2026-04-06T09:25:51.972" >
+      <step title="DeploymentManager.GetResults" date="2026-04-06T09:25:51.979" /><!-- duration: 190ms -->
+    </step><!-- duration: 211ms -->
+  </step><!-- duration: 215ms -->
+  <step title="Outgoing response" date="2026-04-06T09:25:52.193" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 2ms -->
+</step><!-- duration: 248ms -->

@@ -49,9 +49,11 @@ jobs:
             PRISMA_ROOT="node_modules"
           fi
           echo "Using prisma from: $PRISMA_ROOT"
-          mkdir -p deploy/node_modules/@prisma
-          cp -r "$PRISMA_ROOT/@prisma/client" deploy/node_modules/@prisma/
-          cp -r "$PRISMA_ROOT/.prisma" deploy/node_modules/
+          # CRITICAL: Use '_modules' instead of 'node_modules' to prevent
+          # Kudu's NodeProjectOptimizer from tarring and breaking it
+          mkdir -p deploy/_modules/@prisma
+          cp -r "$PRISMA_ROOT/@prisma/client" deploy/_modules/@prisma/
+          cp -r "$PRISMA_ROOT/.prisma" deploy/_modules/
           # Copy prisma schema (needed for prisma client)
           cp -r prisma deploy/
           # Create minimal package.json
@@ -60,6 +62,7 @@ jobs:
           echo "=== Deploy package ==="
           du -sh deploy/
           ls -la deploy/
+          ls -la deploy/_modules/
 
       - name: Login to Azure
         uses: azure/login@v2
