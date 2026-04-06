@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
-import { Building2, Loader2 } from 'lucide-react'
+import { Building2, Loader2, Mail, Lock } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
 export default function LoginPage() {
@@ -30,13 +30,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
       <div className="w-full max-w-md">
         {/* Branding */}
         <div className="mb-8 text-center">
-          <div className="mb-4 flex items-center justify-center gap-2">
-            <Building2 className="h-10 w-10 text-primary" />
-            <span className="text-3xl font-bold text-text">RealtyNest</span>
+          <div className="mb-4 flex items-center justify-center gap-2.5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-3xl font-bold tracking-tight text-text">RealtyNest</span>
           </div>
           <p className="text-text-secondary">
             Sign in to manage your real estate business
@@ -44,10 +46,10 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="rounded-xl border border-gray-200 bg-surface p-8 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger">
+              <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
                 {error}
               </div>
             )}
@@ -55,43 +57,49 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-text"
+                className="mb-1.5 block text-sm font-medium text-slate-700"
               >
                 Email
               </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-text placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-text"
+                className="mb-1.5 block text-sm font-medium text-slate-700"
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-text placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition-all duration-200 hover:from-indigo-700 hover:to-indigo-600 disabled:opacity-60"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isLoading ? 'Signing in…' : 'Sign In'}
@@ -102,9 +110,9 @@ export default function LoginPage() {
             Don&apos;t have an account?{' '}
             <Link
               to="/register"
-              className="font-medium text-primary hover:text-primary-dark"
+              className="font-medium text-indigo-600 transition-colors hover:text-indigo-700"
             >
-              Create one
+              Invitation only
             </Link>
           </p>
         </div>

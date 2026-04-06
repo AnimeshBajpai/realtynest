@@ -22,8 +22,8 @@ interface CreateAgencyForm {
 }
 
 const inputClass =
-  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
-const labelClass = 'block text-sm font-medium text-text mb-1'
+  'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5'
 
 export default function AdminAgenciesPage() {
   const [agencies, setAgencies] = useState<AgencyRow[]>([])
@@ -115,14 +115,14 @@ export default function AdminAgenciesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Agency Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Agency Management</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Create and manage agencies on the platform
           </p>
         </div>
         <button
           onClick={openModal}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           Create Agency
@@ -130,7 +130,7 @@ export default function AdminAgenciesPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-surface">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -147,23 +147,23 @@ export default function AdminAgenciesPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50">
-                  <th className="px-6 py-3 font-medium text-text-secondary">Name</th>
-                  <th className="px-6 py-3 font-medium text-text-secondary">Admin Email</th>
-                  <th className="px-6 py-3 font-medium text-text-secondary">Plan</th>
-                  <th className="px-6 py-3 font-medium text-text-secondary">Status</th>
-                  <th className="px-6 py-3 font-medium text-text-secondary">Created</th>
+                <tr className="border-b border-slate-200 bg-slate-50/80">
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Admin Email</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Plan</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100">
                 {agencies.map((agency) => (
-                  <tr key={agency.id} className="hover:bg-gray-50/50">
+                  <tr key={agency.id} className="transition-colors hover:bg-slate-50">
                     <td className="px-6 py-4 font-medium text-text">{agency.name}</td>
                     <td className="px-6 py-4 text-text-secondary">
                       {agency.admin?.email ?? '—'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
                         {agency.subscriptionPlan}
                       </span>
                     </td>
@@ -192,8 +192,8 @@ export default function AdminAgenciesPage() {
 
       {/* Create Agency Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]">
-          <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[5vh]">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-text">Create Agency</h2>

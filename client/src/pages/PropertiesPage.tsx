@@ -33,16 +33,16 @@ const STATUS_OPTIONS: { value: PropertyStatus | ''; label: string }[] = [
 ]
 
 const typeBadge: Record<PropertyType, string> = {
-  APARTMENT: 'bg-blue-50 text-blue-700',
-  VILLA: 'bg-purple-50 text-purple-700',
-  PLOT: 'bg-green-50 text-green-700',
-  COMMERCIAL: 'bg-orange-50 text-orange-700',
+  APARTMENT: 'bg-blue-50 text-blue-700 border border-blue-200',
+  VILLA: 'bg-purple-50 text-purple-700 border border-purple-200',
+  PLOT: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  COMMERCIAL: 'bg-orange-50 text-orange-700 border border-orange-200',
 }
 
 const statusBadge: Record<PropertyStatus, string> = {
-  AVAILABLE: 'bg-green-50 text-green-700',
-  SOLD: 'bg-red-50 text-red-700',
-  RESERVED: 'bg-yellow-50 text-yellow-700',
+  AVAILABLE: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  SOLD: 'bg-rose-50 text-rose-700 border border-rose-200',
+  RESERVED: 'bg-amber-50 text-amber-700 border border-amber-200',
 }
 
 function formatPrice(price: number): string {
@@ -52,7 +52,7 @@ function formatPrice(price: number): string {
 }
 
 const inputClass =
-  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+  'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
 
 export default function PropertiesPage() {
   const navigate = useNavigate()
@@ -101,14 +101,14 @@ export default function PropertiesPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Properties</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text">Properties</h1>
           <p className="mt-1 text-sm text-text-secondary">
             {total > 0 ? `${total} properties` : 'Manage your property listings'}
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors duration-150 hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           Add Property
@@ -116,7 +116,7 @@ export default function PropertiesPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-surface p-4">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
           <div className="flex-1">
             <label className="mb-1 block text-xs font-medium text-text-secondary">Search</label>
@@ -190,7 +190,7 @@ export default function PropertiesPage() {
           </div>
           <button
             onClick={handleSearch}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
           >
             Filter
           </button>
@@ -203,15 +203,17 @@ export default function PropertiesPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : properties.length === 0 ? (
-        <div className="rounded-xl border border-gray-200 bg-surface py-20 text-center">
-          <Building2 className="mx-auto h-12 w-12 text-text-secondary/40" />
-          <p className="mt-4 text-sm font-medium text-text">No properties found</p>
+        <div className="rounded-xl border border-slate-200 bg-white py-20 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+            <Building2 className="h-8 w-8 text-slate-400" />
+          </div>
+          <p className="mt-4 text-base font-medium text-text">No properties found</p>
           <p className="mt-1 text-sm text-text-secondary">
             Add your first property to get started.
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
           >
             <Plus className="h-4 w-4" />
             Add Property
@@ -225,7 +227,7 @@ export default function PropertiesPage() {
               <div
                 key={property.id}
                 onClick={() => navigate(`/properties/${property.id}`)}
-                className="cursor-pointer rounded-xl border border-gray-200 bg-surface p-5 transition-shadow hover:shadow-md"
+                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
               >
                 <div className="flex items-start justify-between">
                   <h3 className="text-base font-semibold text-text line-clamp-1">
@@ -298,7 +300,7 @@ export default function PropertiesPage() {
                 <button
                   onClick={() => { setPage(page - 1); }}
                   disabled={page <= 1}
-                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50 disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-50"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -306,7 +308,7 @@ export default function PropertiesPage() {
                 <button
                   onClick={() => { setPage(page + 1); }}
                   disabled={page >= totalPages}
-                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50 disabled:opacity-50"
+                  className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-50"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

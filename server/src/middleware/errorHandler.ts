@@ -1,4 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
+import { Prisma } from 'generated-prisma-client';
+import { ZodError } from 'zod';
 
 export class AppError extends Error {
   public readonly statusCode: number;
@@ -18,8 +20,31 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const message = err instanceof AppError ? err.message : 'Internal Server Error';
+  let statusCode = err instanceof AppError ? err.statusCode : 500;
+  let message = err instanceof AppError ? err.message : 'Internal Server Error';
+
+  // Handle Prisma errors
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === 'P2002') {
+      statusCode = 409;
+      message = 'A record with this value already exists';
+    }
+    if (err.code === 'P2025') {
+      statusCode = 404;
+      message = 'Record not found';
+    }
+  }
+
+  // Handle Zod validation errors
+  if (err instanceof ZodError) {
+    statusCode = 400;
+    message = err.issues.map((e) => e.message).join(', ');
+  }
+
+  // Log errors in production
+  if (process.env.NODE_ENV === 'production') {
+    console.error(`[${new Date().toISOString()}] Error: ${err.message}`, err.stack);
+  }
 
   const response: Record<string, unknown> = {
     error: {

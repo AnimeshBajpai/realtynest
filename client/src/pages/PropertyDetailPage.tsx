@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   Loader2,
   Pencil,
   Trash2,
@@ -43,32 +42,32 @@ const INTEREST_OPTIONS: { value: InterestLevel; label: string }[] = [
 ]
 
 const typeBadge: Record<PropertyType, string> = {
-  APARTMENT: 'bg-blue-50 text-blue-700',
-  VILLA: 'bg-purple-50 text-purple-700',
-  PLOT: 'bg-green-50 text-green-700',
-  COMMERCIAL: 'bg-orange-50 text-orange-700',
+  APARTMENT: 'bg-blue-50 text-blue-700 border border-blue-200',
+  VILLA: 'bg-purple-50 text-purple-700 border border-purple-200',
+  PLOT: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  COMMERCIAL: 'bg-orange-50 text-orange-700 border border-orange-200',
 }
 
 const statusBadge: Record<PropertyStatus, string> = {
-  AVAILABLE: 'bg-green-50 text-green-700',
-  SOLD: 'bg-red-50 text-red-700',
-  RESERVED: 'bg-yellow-50 text-yellow-700',
+  AVAILABLE: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  SOLD: 'bg-rose-50 text-rose-700 border border-rose-200',
+  RESERVED: 'bg-amber-50 text-amber-700 border border-amber-200',
 }
 
 const interestBadge: Record<InterestLevel, string> = {
-  HIGH: 'bg-red-50 text-red-700',
-  MEDIUM: 'bg-yellow-50 text-yellow-700',
-  LOW: 'bg-blue-50 text-blue-700',
+  HIGH: 'bg-rose-50 text-rose-700 border border-rose-200',
+  MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-200',
+  LOW: 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
 const leadStatusColors: Record<LeadStatus, string> = {
-  NEW: 'bg-blue-50 text-blue-700',
-  CONTACTED: 'bg-yellow-50 text-yellow-700',
-  QUALIFIED: 'bg-purple-50 text-purple-700',
-  SITE_VISIT: 'bg-indigo-50 text-indigo-700',
-  NEGOTIATION: 'bg-orange-50 text-orange-700',
-  CLOSED_WON: 'bg-green-50 text-green-700',
-  CLOSED_LOST: 'bg-red-50 text-red-700',
+  NEW: 'bg-blue-50 text-blue-700 border border-blue-200',
+  CONTACTED: 'bg-amber-50 text-amber-700 border border-amber-200',
+  QUALIFIED: 'bg-purple-50 text-purple-700 border border-purple-200',
+  SITE_VISIT: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  NEGOTIATION: 'bg-orange-50 text-orange-700 border border-orange-200',
+  CLOSED_WON: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  CLOSED_LOST: 'bg-rose-50 text-rose-700 border border-rose-200',
 }
 
 function formatPrice(price: number): string {
@@ -78,8 +77,8 @@ function formatPrice(price: number): string {
 }
 
 const inputClass =
-  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
-const labelClass = 'block text-sm font-medium text-text-secondary mb-1'
+  'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5'
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -205,17 +204,20 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/properties')}
-        className="mb-4 flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Properties
-      </button>
+      {/* Breadcrumb */}
+      <nav className="mb-4 flex items-center gap-2 text-sm text-text-secondary">
+        <button
+          onClick={() => navigate('/properties')}
+          className="font-medium transition-colors hover:text-primary"
+        >
+          Properties
+        </button>
+        <span className="text-slate-300">/</span>
+        <span className="font-medium text-text">{property.name}</span>
+      </nav>
 
       {/* Header */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-surface p-6">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -234,7 +236,7 @@ export default function PropertyDetailPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={startEditing}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50"
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
@@ -242,7 +244,7 @@ export default function PropertyDetailPage() {
             {isAdmin && (
               <button
                 onClick={() => setDeleteConfirm(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-danger hover:bg-red-50"
+                className="flex items-center gap-1.5 rounded-lg border border-rose-200 px-3.5 py-2 text-sm font-medium text-rose-600 shadow-sm transition-colors hover:bg-rose-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Delete
@@ -255,10 +257,10 @@ export default function PropertyDetailPage() {
       {/* Info Cards */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(property.city || property.state || property.address) && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex items-center gap-2 text-text-secondary">
               <MapPin className="h-4 w-4" />
-              <span className="text-xs font-medium">Location</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Location</span>
             </div>
             <p className="mt-2 text-sm font-medium text-text">
               {[property.address, property.city, property.state, property.zip]
@@ -268,19 +270,19 @@ export default function PropertyDetailPage() {
           </div>
         )}
         {property.price != null && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex items-center gap-2 text-text-secondary">
               <IndianRupee className="h-4 w-4" />
-              <span className="text-xs font-medium">Price</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Price</span>
             </div>
             <p className="mt-2 text-lg font-bold text-text">{formatPrice(property.price)}</p>
           </div>
         )}
         {property.areaSqft != null && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex items-center gap-2 text-text-secondary">
               <Ruler className="h-4 w-4" />
-              <span className="text-xs font-medium">Area</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Area</span>
             </div>
             <p className="mt-2 text-lg font-bold text-text">
               {property.areaSqft.toLocaleString()} sq ft
@@ -288,10 +290,10 @@ export default function PropertyDetailPage() {
           </div>
         )}
         {(property.bedrooms != null || property.bathrooms != null) && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex items-center gap-2 text-text-secondary">
               <Building2 className="h-4 w-4" />
-              <span className="text-xs font-medium">Rooms</span>
+              <span className="text-xs font-medium uppercase tracking-wider">Rooms</span>
             </div>
             <div className="mt-2 flex items-center gap-4 text-sm font-medium text-text">
               {property.bedrooms != null && (
@@ -313,19 +315,19 @@ export default function PropertyDetailPage() {
 
       {/* Description */}
       {property.description && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-surface p-6">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="mb-3 text-base font-semibold text-text">Description</h2>
           <p className="whitespace-pre-wrap text-sm text-text-secondary">{property.description}</p>
         </div>
       )}
 
       {/* Linked Leads */}
-      <div className="rounded-xl border border-gray-200 bg-surface p-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-text">Linked Leads</h2>
           <button
             onClick={openLinkModal}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
           >
             <Link2 className="h-3.5 w-3.5" />
             Link Lead
@@ -339,16 +341,16 @@ export default function PropertyDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left">
-                  <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
-                  <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">Contact</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Status</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Interest</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Notes</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary" />
+                <tr className="border-b border-slate-200 text-left">
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Contact</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Interest</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Notes</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {propertyLeads.map((lp) => (
                   <tr
                     key={lp.id}
@@ -397,8 +399,8 @@ export default function PropertyDetailPage() {
 
       {/* Link Lead Modal */}
       {linkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[10vh]">
-          <div className="w-full max-w-md rounded-xl bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[10vh]">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-text">Link Lead to Property</h2>
               <button
@@ -475,8 +477,8 @@ export default function PropertyDetailPage() {
 
       {/* Edit Modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]">
-          <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[5vh]">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-text">Edit Property</h2>
               <button
@@ -664,8 +666,8 @@ export default function PropertyDetailPage() {
 
       {/* Delete Confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-surface p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-text">Delete Property</h3>
             <p className="mt-2 text-sm text-text-secondary">
               Are you sure you want to delete &ldquo;{property.name}&rdquo;? This action cannot be

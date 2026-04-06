@@ -24,9 +24,9 @@ interface NavItem {
 }
 
 const roleBadgeColors: Record<string, string> = {
-  SUPER_ADMIN: 'bg-danger/10 text-danger',
-  AGENCY_ADMIN: 'bg-primary/10 text-primary',
-  BROKER: 'bg-success/10 text-success',
+  SUPER_ADMIN: 'bg-rose-50 text-rose-700 border border-rose-200',
+  AGENCY_ADMIN: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  BROKER: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
 }
 
 const roleLabels: Record<string, string> = {
@@ -99,13 +99,13 @@ function GlobalSearch() {
   return (
     <div ref={containerRef} className="relative hidden sm:block">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           placeholder="Search leads, properties..."
-          className="w-56 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-8 text-sm text-text placeholder:text-gray-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary lg:w-72"
+          className="w-56 rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-8 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 lg:w-72"
         />
         {query && (
           <button onClick={() => { setQuery(''); setResults(null); setOpen(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -115,7 +115,7 @@ function GlobalSearch() {
       </div>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-80 rounded-xl border border-gray-200 bg-surface shadow-lg lg:w-96">
+        <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-xl border border-slate-200 bg-surface shadow-xl ring-1 ring-black/5 lg:w-96">
           {loading ? (
             <div className="flex items-center justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
           ) : !hasResults ? (
@@ -223,7 +223,7 @@ export default function Layout() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -231,14 +231,16 @@ export default function Layout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col bg-[#1e293b] text-white transition-all duration-300 lg:relative lg:z-auto',
-          sidebarOpen ? 'w-60' : 'w-16',
+          'fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar text-white transition-all duration-300 ease-in-out lg:relative lg:z-auto',
+          sidebarOpen ? 'w-60' : 'w-[68px]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
-          <Building2 className="h-8 w-8 shrink-0 text-primary" />
+        <div className="flex h-16 items-center gap-3 border-b border-white/[0.08] px-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500">
+            <Building2 className="h-5 w-5 text-white" />
+          </div>
           {sidebarOpen && (
             <span className="text-lg font-bold tracking-tight">RealtyNest</span>
           )}
@@ -246,7 +248,12 @@ export default function Layout() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-1 px-2">
+          {sidebarOpen && (
+            <p className="mb-2 px-5 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+              Menu
+            </p>
+          )}
+          <ul className="space-y-0.5 px-2">
             {navItems.map((item) => (
               <li key={item.path}>
                 <NavLink
@@ -254,14 +261,14 @@ export default function Layout() {
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                      'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                       isActive
-                        ? 'bg-white/10 text-white'
-                        : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        ? 'border-l-[3px] border-indigo-400 bg-white/[0.08] text-white'
+                        : 'border-l-[3px] border-transparent text-slate-400 hover:bg-white/[0.05] hover:text-white'
                     )
                   }
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
                   {sidebarOpen && <span>{item.label}</span>}
                 </NavLink>
               </li>
@@ -270,12 +277,12 @@ export default function Layout() {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-white/10 p-2">
+        <div className="border-t border-white/[0.08] p-2">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-200 hover:bg-white/[0.05] hover:text-white"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
+            <LogOut className="h-[18px] w-[18px] shrink-0" />
             {sidebarOpen && <span>Logout</span>}
           </button>
         </div>
@@ -284,52 +291,55 @@ export default function Layout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top header */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-surface px-4 lg:px-6">
+        <header className="flex h-16 items-center justify-between border-b border-slate-200/80 bg-white px-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] lg:px-6">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
             >
               <Menu className="h-5 w-5" />
             </button>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:block"
+              className="hidden rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 lg:block"
             >
               <Menu className="h-5 w-5" />
             </button>
             <GlobalSearch />
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => { navigate('/notifications'); fetchUnreadCount() }}
-              className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+              className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100"
             >
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </button>
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">
+            <div className="h-6 w-px bg-slate-200" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white shadow-sm">
                 {userInitials}
               </div>
-              <span className="hidden text-sm font-medium text-text sm:block">
-                {displayName}
-              </span>
-              {user?.role && (
-                <span
-                  className={cn(
-                    'hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-block',
-                    roleBadgeColors[user.role] ?? 'bg-gray-100 text-gray-600'
-                  )}
-                >
-                  {roleLabels[user.role] ?? user.role}
+              <div className="hidden sm:block">
+                <span className="text-sm font-medium text-text">
+                  {displayName}
                 </span>
-              )}
+                {user?.role && (
+                  <span
+                    className={cn(
+                      'ml-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium',
+                      roleBadgeColors[user.role] ?? 'bg-gray-100 text-gray-600'
+                    )}
+                  >
+                    {roleLabels[user.role] ?? user.role}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </header>

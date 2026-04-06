@@ -25,8 +25,8 @@ const PRIORITIES: { value: LeadPriority; label: string }[] = [
 ]
 
 const inputClass =
-  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
-const labelClass = 'block text-sm font-medium text-text mb-1'
+  'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5'
 
 export default function CreateLeadModal({ open, onClose }: Props) {
   const { createLead } = useLeadStore()
@@ -100,10 +100,10 @@ export default function CreateLeadModal({ open, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]">
-      <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[5vh]">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-text">Add New Lead</h2>
           <button
             onClick={onClose}

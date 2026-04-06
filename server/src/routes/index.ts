@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { prisma } from '../config/database.js';
 import authRouter from './auth.routes.js';
 import userRouter from './user.routes.js';
 import leadRouter from './lead.routes.js';
@@ -11,9 +12,14 @@ import searchRouter from './search.routes.js';
 
 const router = Router();
 
-// Health check
-router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with DB connectivity
+router.get('/health', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'degraded', timestamp: new Date().toISOString(), db: 'disconnected' });
+  }
 });
 
 // Mount routes

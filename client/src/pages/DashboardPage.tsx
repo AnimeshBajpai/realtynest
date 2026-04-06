@@ -17,22 +17,22 @@ import type {
   BrokerDashboard, AgencyDashboard, SuperAdminDashboard, LeadActivity,
 } from '../types'
 
-const CHART_COLORS = ['#3b82f6', '#f59e0b', '#8b5cf6', '#6366f1', '#f97316', '#22c55e', '#ef4444']
+const CHART_COLORS = ['#4f46e5', '#f59e0b', '#8b5cf6', '#6366f1', '#f97316', '#10b981', '#f43f5e']
 
 const statusColors: Record<LeadStatus, string> = {
-  NEW: 'bg-blue-50 text-blue-700',
-  CONTACTED: 'bg-yellow-50 text-yellow-700',
-  QUALIFIED: 'bg-purple-50 text-purple-700',
-  SITE_VISIT: 'bg-indigo-50 text-indigo-700',
-  NEGOTIATION: 'bg-orange-50 text-orange-700',
-  CLOSED_WON: 'bg-green-50 text-green-700',
-  CLOSED_LOST: 'bg-red-50 text-red-700',
+  NEW: 'bg-blue-50 text-blue-700 border border-blue-200',
+  CONTACTED: 'bg-amber-50 text-amber-700 border border-amber-200',
+  QUALIFIED: 'bg-purple-50 text-purple-700 border border-purple-200',
+  SITE_VISIT: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  NEGOTIATION: 'bg-orange-50 text-orange-700 border border-orange-200',
+  CLOSED_WON: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  CLOSED_LOST: 'bg-rose-50 text-rose-700 border border-rose-200',
 }
 
 const priorityColors: Record<LeadPriority, string> = {
-  HOT: 'bg-red-50 text-red-700',
-  WARM: 'bg-orange-50 text-orange-700',
-  COLD: 'bg-blue-50 text-blue-700',
+  HOT: 'bg-rose-50 text-rose-700 border border-rose-200',
+  WARM: 'bg-orange-50 text-orange-700 border border-orange-200',
+  COLD: 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -49,14 +49,14 @@ const STATUS_LABELS: Record<string, string> = {
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-surface p-5">
+    <div className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-text-secondary">{label}</span>
-        <div className={cn('rounded-lg p-2', color)}>
+        <div className={cn('rounded-xl p-2.5', color)}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <p className="mt-2 text-3xl font-bold text-text">{value}</p>
+      <p className="mt-3 text-3xl font-bold tracking-tight text-text">{value}</p>
     </div>
   )
 }
@@ -79,8 +79,8 @@ function FollowUpsList({ followUps, loading, navigate }: {
 
   return (
     <div className="mt-8">
-      <h2 className="mb-4 text-lg font-semibold text-text">Upcoming Follow-ups</h2>
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+      <h2 className="mb-4 text-lg font-semibold tracking-tight text-text">Upcoming Follow-ups</h2>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -123,12 +123,12 @@ function RecentLeadsTable({ leads, loading, navigate }: { leads: Lead[]; loading
   return (
     <div className="mt-8">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-text">Recent Leads</h2>
-        <button onClick={() => navigate('/leads')} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+        <h2 className="text-lg font-semibold tracking-tight text-text">Recent Leads</h2>
+        <button onClick={() => navigate('/leads')} className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-hover">
           View all <ArrowRight className="h-4 w-4" />
         </button>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : leads.length === 0 ? (
@@ -136,26 +136,26 @@ function RecentLeadsTable({ leads, loading, navigate }: { leads: Lead[]; loading
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary md:table-cell">Email</th>
-                <th className="px-4 py-3 font-medium text-text-secondary">Status</th>
-                <th className="px-4 py-3 font-medium text-text-secondary">Priority</th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">Created</th>
+              <tr className="border-b border-slate-200 text-left">
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">Email</th>
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Priority</th>
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Created</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {leads.slice(0, 5).map((lead) => (
-                <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} className="cursor-pointer border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-text">{lead.firstName} {lead.lastName}</td>
-                  <td className="hidden px-4 py-3 text-text-secondary md:table-cell">{lead.email || '—'}</td>
-                  <td className="px-4 py-3">
+                <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} className="cursor-pointer transition-colors hover:bg-slate-50">
+                  <td className="px-4 py-3.5 font-medium text-text">{lead.firstName} {lead.lastName}</td>
+                  <td className="hidden px-4 py-3.5 text-text-secondary md:table-cell">{lead.email || '—'}</td>
+                  <td className="px-4 py-3.5">
                     <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', statusColors[lead.status])}>{STATUS_LABELS[lead.status] ?? lead.status}</span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', priorityColors[lead.priority])}>{lead.priority}</span>
                   </td>
-                  <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">{format(new Date(lead.createdAt), 'MMM d, yyyy')}</td>
+                  <td className="hidden px-4 py-3.5 text-text-secondary sm:table-cell">{format(new Date(lead.createdAt), 'MMM d, yyyy')}</td>
                 </tr>
               ))}
             </tbody>
@@ -210,8 +210,8 @@ function BrokerDash() {
       {/* Leads by Status */}
       {statusEntries.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold text-text">My Leads by Status</h2>
-          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight text-text">My Leads by Status</h2>
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="space-y-3">
               {statusEntries.map(({ status, count }, i) => {
                 const max = Math.max(...statusEntries.map((e) => e.count), 1)
@@ -309,7 +309,7 @@ function AgencyAdminDash() {
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         {/* Pipeline Funnel */}
         {data.pipeline && data.pipeline.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-base font-semibold text-text">Pipeline Funnel</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data.pipeline.map((p) => ({ ...p, label: STATUS_LABELS[p.status] ?? p.status }))} layout="vertical" margin={{ left: 20, right: 20 }}>
@@ -327,7 +327,7 @@ function AgencyAdminDash() {
 
         {/* Leads by Source (Donut) */}
         {sourceData.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-surface p-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 className="mb-4 text-base font-semibold text-text">Leads by Source</h3>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
@@ -344,25 +344,25 @@ function AgencyAdminDash() {
       {/* Broker Performance */}
       {data.brokerPerformance && data.brokerPerformance.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold text-text">Broker Performance</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight text-text">Broker Performance</h2>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left">
-                  <th className="px-4 py-3 font-medium text-text-secondary">Broker</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Assigned</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Active</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Converted</th>
+                <tr className="border-b border-slate-200 text-left">
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Broker</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Assigned</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Active</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Converted</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {data.brokerPerformance.map((broker) => (
-                  <tr key={broker.id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-text">{broker.firstName} {broker.lastName}</td>
-                    <td className="px-4 py-3 text-text-secondary">{broker.assigned}</td>
-                    <td className="px-4 py-3 text-text-secondary">{broker.active}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">{broker.converted}</span>
+                  <tr key={broker.id} className="transition-colors hover:bg-slate-50">
+                    <td className="px-4 py-3.5 font-medium text-text">{broker.firstName} {broker.lastName}</td>
+                    <td className="px-4 py-3.5 text-text-secondary">{broker.assigned}</td>
+                    <td className="px-4 py-3.5 text-text-secondary">{broker.active}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">{broker.converted}</span>
                     </td>
                   </tr>
                 ))}
@@ -418,24 +418,24 @@ function SuperAdminDash() {
       {/* Agencies Table */}
       {data.agencies && data.agencies.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-4 text-lg font-semibold text-text">Agencies</h2>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight text-text">Agencies</h2>
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left">
-                  <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Leads</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Users</th>
-                  <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">Created</th>
+                <tr className="border-b border-slate-200 text-left">
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Leads</th>
+                  <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Users</th>
+                  <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">Created</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {data.agencies.map((agency) => (
-                  <tr key={agency.id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-text">{agency.name}</td>
-                    <td className="px-4 py-3 text-text-secondary">{agency.leadCount}</td>
-                    <td className="px-4 py-3 text-text-secondary">{agency.userCount}</td>
-                    <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">{format(new Date(agency.createdAt), 'MMM d, yyyy')}</td>
+                  <tr key={agency.id} className="transition-colors hover:bg-slate-50">
+                    <td className="px-4 py-3.5 font-medium text-text">{agency.name}</td>
+                    <td className="px-4 py-3.5 text-text-secondary">{agency.leadCount}</td>
+                    <td className="px-4 py-3.5 text-text-secondary">{agency.userCount}</td>
+                    <td className="hidden px-4 py-3.5 text-text-secondary sm:table-cell">{format(new Date(agency.createdAt), 'MMM d, yyyy')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -479,9 +479,11 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text">Welcome back!</h1>
-        <p className="text-text-secondary">{greetings[role ?? ''] ?? "Here's what's happening today."}</p>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-text">
+          Welcome back{user?.firstName ? `, ${user.firstName}` : ''}! 👋
+        </h1>
+        <p className="mt-1 text-text-secondary">{greetings[role ?? ''] ?? "Here's what's happening today."}</p>
       </div>
 
       {role === 'BROKER' && <BrokerDash />}

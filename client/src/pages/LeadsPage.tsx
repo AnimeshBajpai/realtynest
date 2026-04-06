@@ -41,23 +41,23 @@ const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
 ]
 
 const statusColors: Record<LeadStatus, string> = {
-  NEW: 'bg-blue-50 text-blue-700',
-  CONTACTED: 'bg-yellow-50 text-yellow-700',
-  QUALIFIED: 'bg-purple-50 text-purple-700',
-  SITE_VISIT: 'bg-indigo-50 text-indigo-700',
-  NEGOTIATION: 'bg-orange-50 text-orange-700',
-  CLOSED_WON: 'bg-green-50 text-green-700',
-  CLOSED_LOST: 'bg-red-50 text-red-700',
+  NEW: 'bg-blue-50 text-blue-700 border border-blue-200',
+  CONTACTED: 'bg-amber-50 text-amber-700 border border-amber-200',
+  QUALIFIED: 'bg-purple-50 text-purple-700 border border-purple-200',
+  SITE_VISIT: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  NEGOTIATION: 'bg-orange-50 text-orange-700 border border-orange-200',
+  CLOSED_WON: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  CLOSED_LOST: 'bg-rose-50 text-rose-700 border border-rose-200',
 }
 
 const priorityColors: Record<LeadPriority, string> = {
-  HOT: 'bg-red-50 text-red-700',
-  WARM: 'bg-orange-50 text-orange-700',
-  COLD: 'bg-blue-50 text-blue-700',
+  HOT: 'bg-rose-50 text-rose-700 border border-rose-200',
+  WARM: 'bg-orange-50 text-orange-700 border border-orange-200',
+  COLD: 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
 const selectClass =
-  'rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+  'rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
 
 export default function LeadsPage() {
   const navigate = useNavigate()
@@ -114,14 +114,14 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Leads</h1>
-          <p className="text-sm text-text-secondary">
+          <h1 className="text-2xl font-bold tracking-tight text-text">Leads</h1>
+          <p className="mt-1 text-sm text-text-secondary">
             {total} total lead{total !== 1 ? 's' : ''}
           </p>
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors duration-150 hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           Add Lead
@@ -182,7 +182,7 @@ export default function LeadsPage() {
               clearFilters()
               setSearchInput('')
             }}
-            className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-gray-100"
+            className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-medium text-text-secondary transition-colors hover:bg-slate-50 hover:text-text"
           >
             <X className="h-4 w-4" />
             Clear
@@ -198,15 +198,17 @@ export default function LeadsPage() {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
-            <Users className="mb-3 h-12 w-12 opacity-40" />
-            <p className="text-lg font-medium">No leads found</p>
+            <div className="rounded-2xl bg-slate-100 p-4">
+              <Users className="h-10 w-10 text-slate-400" />
+            </div>
+            <p className="mt-4 text-lg font-medium text-text">No leads found</p>
             <p className="mt-1 text-sm">
               {hasActiveFilters
                 ? 'Try adjusting your filters'
@@ -216,47 +218,39 @@ export default function LeadsPage() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary md:table-cell">
+              <tr className="border-b border-slate-200 text-left">
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">
                   Email
                 </th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary lg:table-cell">
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">
                   Phone
                 </th>
-                <th className="px-4 py-3 font-medium text-text-secondary">Source</th>
-                <th className="px-4 py-3 font-medium text-text-secondary">Status</th>
-                <th className="px-4 py-3 font-medium text-text-secondary">Priority</th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary xl:table-cell">
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Source</th>
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Priority</th>
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 xl:table-cell">
                   Assigned To
                 </th>
-                <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">
+                <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">
                   Created
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {leads.map((lead) => (
                 <tr
                   key={lead.id}
                   onClick={() => navigate(`/leads/${lead.id}`)}
-                  className="cursor-pointer border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50"
+                  className="cursor-pointer transition-colors hover:bg-slate-50"
                 >
-                  <td className="px-4 py-3 font-medium text-text">
-                    {lead.firstName} {lead.lastName}
+                  <td className="px-4 py-3.5 font-medium text-text">{lead.firstName} {lead.lastName}</td>
+                  <td className="hidden px-4 py-3.5 text-text-secondary md:table-cell">{lead.email || '—'}</td>
+                  <td className="hidden px-4 py-3.5 text-text-secondary lg:table-cell">{lead.phone || '—'}</td>
+                  <td className="px-4 py-3.5">
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">{formatSourceLabel(lead.source)}</span>
                   </td>
-                  <td className="hidden px-4 py-3 text-text-secondary md:table-cell">
-                    {lead.email || '—'}
-                  </td>
-                  <td className="hidden px-4 py-3 text-text-secondary lg:table-cell">
-                    {lead.phone || '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-                      {formatSourceLabel(lead.source)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <span
                       className={cn(
                         'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -266,7 +260,7 @@ export default function LeadsPage() {
                       {formatStatusLabel(lead.status)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <span
                       className={cn(
                         'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -276,12 +270,12 @@ export default function LeadsPage() {
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="hidden px-4 py-3 text-text-secondary xl:table-cell">
+                  <td className="hidden px-4 py-3.5 text-text-secondary xl:table-cell">
                     {lead.assignedTo
                       ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
                       : '—'}
                   </td>
-                  <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">
+                  <td className="hidden px-4 py-3.5 text-text-secondary sm:table-cell">
                     {format(new Date(lead.createdAt), 'MMM d, yyyy')}
                   </td>
                 </tr>
@@ -303,7 +297,7 @@ export default function LeadsPage() {
                 setPage(page - 1)
               }}
               disabled={page <= 1}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50 disabled:opacity-40"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
@@ -324,10 +318,10 @@ export default function LeadsPage() {
                   key={pageNum}
                   onClick={() => setPage(pageNum)}
                   className={cn(
-                    'h-8 w-8 rounded-lg text-sm font-medium',
+                    'h-9 w-9 rounded-lg text-sm font-medium transition-colors',
                     page === pageNum
-                      ? 'bg-primary text-white'
-                      : 'text-text hover:bg-gray-100'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-text hover:bg-slate-100'
                   )}
                 >
                   {pageNum}
@@ -339,7 +333,7 @@ export default function LeadsPage() {
                 setPage(page + 1)
               }}
               disabled={page >= totalPages}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50 disabled:opacity-40"
+              className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-40"
             >
               Next
               <ChevronRight className="h-4 w-4" />

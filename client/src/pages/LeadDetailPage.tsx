@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   Mail,
   Phone,
   MapPin,
@@ -52,24 +51,24 @@ const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
 ]
 
 const statusColors: Record<LeadStatus, string> = {
-  NEW: 'bg-blue-50 text-blue-700',
-  CONTACTED: 'bg-yellow-50 text-yellow-700',
-  QUALIFIED: 'bg-purple-50 text-purple-700',
-  SITE_VISIT: 'bg-indigo-50 text-indigo-700',
-  NEGOTIATION: 'bg-orange-50 text-orange-700',
-  CLOSED_WON: 'bg-green-50 text-green-700',
-  CLOSED_LOST: 'bg-red-50 text-red-700',
+  NEW: 'bg-blue-50 text-blue-700 border border-blue-200',
+  CONTACTED: 'bg-amber-50 text-amber-700 border border-amber-200',
+  QUALIFIED: 'bg-purple-50 text-purple-700 border border-purple-200',
+  SITE_VISIT: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  NEGOTIATION: 'bg-orange-50 text-orange-700 border border-orange-200',
+  CLOSED_WON: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  CLOSED_LOST: 'bg-rose-50 text-rose-700 border border-rose-200',
 }
 
 const priorityColors: Record<LeadPriority, string> = {
-  HOT: 'bg-red-50 text-red-700',
-  WARM: 'bg-orange-50 text-orange-700',
-  COLD: 'bg-blue-50 text-blue-700',
+  HOT: 'bg-rose-50 text-rose-700 border border-rose-200',
+  WARM: 'bg-orange-50 text-orange-700 border border-orange-200',
+  COLD: 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
 const inputClass =
-  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
-const labelClass = 'block text-sm font-medium text-text-secondary mb-1'
+  'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5'
 
 function formatBudget(min?: number, max?: number) {
   if (!min && !max) return null
@@ -242,17 +241,20 @@ export default function LeadDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/leads')}
-        className="mb-4 flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Leads
-      </button>
+      {/* Breadcrumb */}
+      <nav className="mb-4 flex items-center gap-2 text-sm text-text-secondary">
+        <button
+          onClick={() => navigate('/leads')}
+          className="font-medium transition-colors hover:text-primary"
+        >
+          Leads
+        </button>
+        <span className="text-slate-300">/</span>
+        <span className="font-medium text-text">{lead.firstName} {lead.lastName}</span>
+      </nav>
 
       {/* Lead header */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-surface p-6">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -275,7 +277,7 @@ export default function LeadDetailPage() {
               >
                 {lead.priority}
               </span>
-              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700">
                 {sourceLabel}
               </span>
             </div>
@@ -296,7 +298,7 @@ export default function LeadDetailPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={startEditing}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50"
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
@@ -305,7 +307,7 @@ export default function LeadDetailPage() {
             <div className="relative">
               <button
                 onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50"
               >
                 Change Status
               </button>
@@ -315,7 +317,7 @@ export default function LeadDetailPage() {
                     className="fixed inset-0 z-10"
                     onClick={() => setStatusDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-surface py-1 shadow-lg">
+                  <div className="absolute right-0 z-20 mt-1 w-44 rounded-xl border border-slate-200 bg-white py-1 shadow-xl ring-1 ring-black/5">
                     {STATUS_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
@@ -344,7 +346,7 @@ export default function LeadDetailPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Info card */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-text">Contact Information</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-center gap-3">
@@ -416,7 +418,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Activity Timeline */}
-          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-base font-semibold text-text">Activity Timeline</h2>
             {timeline.length === 0 ? (
               <p className="py-6 text-center text-sm text-text-secondary">
@@ -427,10 +429,10 @@ export default function LeadDetailPage() {
                 {timeline.map((activity) => (
                   <div key={activity.id} className="flex gap-3">
                     <div className="relative flex flex-col items-center">
-                      <div className="rounded-full bg-gray-100 p-1.5">
-                        <Clock className="h-3.5 w-3.5 text-text-secondary" />
+                      <div className="rounded-full bg-indigo-50 p-1.5 ring-2 ring-white">
+                        <Clock className="h-3.5 w-3.5 text-indigo-500" />
                       </div>
-                      <div className="mt-1 flex-1 w-px bg-gray-200" />
+                      <div className="mt-1 flex-1 w-px bg-slate-200" />
                     </div>
                     <div className="flex-1 pb-4">
                       <p className="text-sm text-text">
@@ -463,12 +465,12 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Communications */}
-          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-text">Communications</h2>
               <button
                 onClick={() => setShowCommModal(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-dark"
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Add Communication
@@ -487,7 +489,7 @@ export default function LeadDetailPage() {
                 {communications.map((comm) => (
                   <div
                     key={comm.id}
-                    className="rounded-lg border border-gray-100 p-4"
+                    className="rounded-lg border border-slate-200 p-4 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -554,7 +556,7 @@ export default function LeadDetailPage() {
 
         {/* Sidebar info */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold text-text">Lead Details</h3>
             <dl className="space-y-3 text-sm">
               <div>
@@ -625,8 +627,8 @@ export default function LeadDetailPage() {
 
       {/* Edit Modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]">
-          <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[5vh]">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-text">Edit Lead</h2>
               <button
@@ -818,8 +820,8 @@ export default function LeadDetailPage() {
 
       {/* Add Communication Modal */}
       {showCommModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[10vh]">
-          <div className="w-full max-w-md rounded-xl bg-surface shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[10vh]">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-text">Add Communication</h2>
               <button

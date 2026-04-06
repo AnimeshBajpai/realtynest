@@ -110,9 +110,11 @@ export default function TeamPage() {
   if (!isAdmin) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-text">Team</h1>
-        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-surface p-12">
-          <Shield className="h-12 w-12 text-text-secondary" />
+        <h1 className="text-2xl font-bold tracking-tight text-text">Team</h1>
+        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-12 shadow-sm">
+          <div className="rounded-2xl bg-slate-100 p-4">
+            <Shield className="h-8 w-8 text-slate-400" />
+          </div>
           <p className="mt-4 text-lg font-medium text-text">Access Restricted</p>
           <p className="mt-1 text-text-secondary">
             You don&apos;t have permission to manage team members.
@@ -126,8 +128,8 @@ export default function TeamPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text">Team</h1>
-          <p className="mt-1 text-text-secondary">
+          <h1 className="text-2xl font-bold tracking-tight text-text">Team</h1>
+          <p className="mt-1 text-sm text-text-secondary">
             Manage your team members and roles.
           </p>
         </div>
@@ -136,7 +138,7 @@ export default function TeamPage() {
             setError('')
             setShowModal(true)
           }}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-hover"
         >
           <UserPlus className="h-4 w-4" />
           Add Broker
@@ -154,8 +156,10 @@ export default function TeamPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : brokers.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-surface p-12">
-          <Users className="h-12 w-12 text-text-secondary" />
+        <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-12 shadow-sm">
+          <div className="rounded-2xl bg-slate-100 p-4">
+            <Users className="h-8 w-8 text-slate-400" />
+          </div>
           <p className="mt-4 text-lg font-medium text-text">No team members yet</p>
           <p className="mt-1 text-text-secondary">
             Add your first broker to get started.
@@ -166,11 +170,11 @@ export default function TeamPage() {
           {brokers.map((broker) => (
             <div
               key={broker.id}
-              className="rounded-xl border border-gray-200 bg-surface p-5 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-semibold text-white shadow-sm">
                     {broker.firstName?.charAt(0) ?? ''}
                     {broker.lastName?.charAt(0) ?? ''}
                   </div>
@@ -179,10 +183,10 @@ export default function TeamPage() {
                       {broker.firstName} {broker.lastName}
                     </p>
                     <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                      className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${
                         broker.isActive
-                          ? 'bg-success/10 text-success'
-                          : 'bg-danger/10 text-danger'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                          : 'border-rose-200 bg-rose-50 text-rose-700'
                       }`}
                     >
                       {broker.isActive ? 'Active' : 'Inactive'}
@@ -230,8 +234,8 @@ export default function TeamPage() {
 
       {/* Add Broker Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-text">Add Broker</h2>
               <button
