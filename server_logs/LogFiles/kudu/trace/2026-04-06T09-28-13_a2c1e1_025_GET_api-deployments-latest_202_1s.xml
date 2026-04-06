@@ -1,9 +1,0 @@
-<step title="Incoming Request" date="2026-04-06T09:28:13.464" instance="a2c1e1" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-04-06_09-25-51Z" method="GET" type="request" pid="835,1,15" Host="realtynest-api.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_473aeef9659edb76842059deefb14ef6e543d31c02b62446c3df72263aab17f2_v3.0.8" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5; ARRAffinitySameSite=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5" Content-Length="0" X-ARR-LOG-ID="b381b22a-8e02-422c-b7c0-cbcb2389a497" CLIENT-IP="172.172.158.4:56332" X-SITE-DEPLOYMENT-ID="realtynest-api" WAS-DEFAULT-HOSTNAME="realtynest-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2026-04-06_09-25-51Z" X-Client-IP="172.172.158.4" X-Client-Port="56332" >
-  <step title="Cleanup Xml Logs" date="2026-04-06T09:28:13.472" /><!-- duration: 31ms -->
-  <step title="DeploymentService.GetResult" date="2026-04-06T09:28:13.533" >
-    <step title="DeploymentService.GetLatestDeployment" date="2026-04-06T09:28:13.608" >
-      <step title="DeploymentManager.GetResults" date="2026-04-06T09:28:13.638" /><!-- duration: 592ms -->
-    </step><!-- duration: 651ms -->
-  </step><!-- duration: 765ms -->
-  <step title="Outgoing response" date="2026-04-06T09:28:14.417" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 11ms -->
-</step><!-- duration: 973ms -->
