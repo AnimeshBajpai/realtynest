@@ -1,45 +1,14 @@
-# Dependencies
 node_modules/
-
-# Build outputs
 dist/
-build/
-
-# Environment variables
 .env
-.env.local
-.env.production
-.env.*.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
 *.log
-npm-debug.log*
-
-# Testing
-coverage/
-
-# Prisma
-server/prisma/*.db
-
-# Azure
-.azure/
 
 # Deployment artifacts
 app_logs*
+logs*/
 server-test-deploy.zip
 server/deploy_test/
 server/startup.sh
-*.zip
-
 server/deploy/
 server/bundle/
+*.zip
