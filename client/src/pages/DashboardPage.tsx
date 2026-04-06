@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, UserCheck, TrendingUp, BarChart3, Loader2, ArrowRight } from 'lucide-react'
+import { Users, UserCheck, TrendingUp, BarChart3, Loader2, ArrowRight, Phone, Calendar, Mail, MessageSquare, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '../lib/utils'
 import { useLeadStore } from '../store/leadStore'
-import type { LeadStatus, LeadPriority } from '../types'
+import api from '../lib/api'
+import type { LeadStatus, LeadPriority, CommunicationType } from '../types'
 
 const statusColors: Record<LeadStatus, string> = {
   NEW: 'bg-blue-50 text-blue-700',
@@ -36,10 +37,45 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { stats, leads, isLoading, fetchStats, fetchLeads } = useLeadStore()
 
+  interface FollowUp {
+    id: string
+    leadId: string
+    type: CommunicationType
+    subject?: string
+    scheduledAt: string
+    lead?: { id: string; firstName: string; lastName: string }
+  }
+
+  const [followUps, setFollowUps] = useState<FollowUp[]>([])
+  const [followUpsLoading, setFollowUpsLoading] = useState(false)
+
   useEffect(() => {
     fetchStats()
     fetchLeads()
+    // Fetch upcoming follow-ups
+    const loadFollowUps = async () => {
+      setFollowUpsLoading(true)
+      try {
+        const { data } = await api.get('/follow-ups')
+        setFollowUps(data.followUps ?? data.data ?? [])
+      } catch {
+        setFollowUps([])
+      } finally {
+        setFollowUpsLoading(false)
+      }
+    }
+    loadFollowUps()
   }, [fetchStats, fetchLeads])
+
+  const followUpIcon = (type: CommunicationType) => {
+    switch (type) {
+      case 'CALL': return <Phone className="h-4 w-4" />
+      case 'MEETING': return <Calendar className="h-4 w-4" />
+      case 'EMAIL': return <Mail className="h-4 w-4" />
+      case 'SMS': return <MessageSquare className="h-4 w-4" />
+      case 'NOTE': return <FileText className="h-4 w-4" />
+    }
+  }
 
   const activeLeads = stats
     ? stats.total -
@@ -180,6 +216,57 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+      </div>
+
+      {/* Upcoming Follow-ups */}
+      <div className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-text">Upcoming Follow-ups</h2>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+          {followUpsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : followUps.length === 0 ? (
+            <div className="py-12 text-center text-sm text-text-secondary">
+              No upcoming follow-ups
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {followUps.slice(0, 5).map((fu) => (
+                <div
+                  key={fu.id}
+                  onClick={() => fu.lead && navigate(`/leads/${fu.lead.id ?? fu.leadId}`)}
+                  className="flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-50"
+                >
+                  <div className="rounded-lg bg-gray-100 p-2 text-text-secondary">
+                    {followUpIcon(fu.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text">
+                      {fu.lead
+                        ? `${fu.lead.firstName} ${fu.lead.lastName}`
+                        : 'Unknown Lead'}
+                    </p>
+                    {fu.subject && (
+                      <p className="text-xs text-text-secondary truncate">{fu.subject}</p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                      {fu.type}
+                    </span>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {format(new Date(fu.scheduledAt), 'MMM d, h:mm a')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

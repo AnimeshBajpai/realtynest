@@ -92,3 +92,56 @@ export interface PaginatedResponse<T> {
   limit: number
   totalPages: number
 }
+
+// Property types
+export type PropertyType = 'APARTMENT' | 'VILLA' | 'PLOT' | 'COMMERCIAL'
+export type PropertyStatus = 'AVAILABLE' | 'SOLD' | 'RESERVED'
+export type InterestLevel = 'HIGH' | 'MEDIUM' | 'LOW'
+export type CommunicationType = 'CALL' | 'MEETING' | 'EMAIL' | 'SMS' | 'NOTE'
+
+export interface Property {
+  id: string
+  agencyId: string
+  name: string
+  type: PropertyType
+  address?: string
+  city?: string
+  state?: string
+  zip?: string
+  latitude?: number
+  longitude?: number
+  price?: number
+  areaSqft?: number
+  bedrooms?: number
+  bathrooms?: number
+  status: PropertyStatus
+  description?: string
+  images?: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LeadProperty {
+  id: string
+  leadId: string
+  propertyId: string
+  interestLevel: InterestLevel
+  notes?: string
+  createdAt: string
+  lead?: { id: string; firstName: string; lastName: string; email?: string; phone?: string; status: LeadStatus }
+  property?: Property
+}
+
+export interface Communication {
+  id: string
+  leadId: string
+  userId: string
+  type: CommunicationType
+  subject?: string
+  body?: string
+  outcome?: string
+  scheduledAt?: string
+  completedAt?: string
+  createdAt: string
+  user?: { firstName: string; lastName: string }
+}
