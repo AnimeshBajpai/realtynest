@@ -43,26 +43,40 @@ jobs:
           mkdir -p deploy
           # Copy the single bundled server file
           cp bundle/server.js deploy/
-          # Copy Prisma runtime — npm workspaces hoists to repo root
-          PRISMA_ROOT="../node_modules"
-          if [ -d "node_modules/@prisma/client" ]; then
-            PRISMA_ROOT="node_modules"
-          fi
-          echo "Using prisma from: $PRISMA_ROOT"
-          # CRITICAL: Use '_modules' instead of 'node_modules' to prevent
-          # Kudu's NodeProjectOptimizer from tarring and breaking it
-          mkdir -p deploy/_modules/@prisma
-          cp -r "$PRISMA_ROOT/@prisma/client" deploy/_modules/@prisma/
-          cp -r "$PRISMA_ROOT/.prisma" deploy/_modules/
+
           # Copy prisma schema (needed for prisma client)
           cp -r prisma deploy/
-          # Create minimal package.json
-          echo '{"name":"realtynest-api","type":"module","scripts":{"start":"node server.js"}}' > deploy/package.json
+
+          # Create package.json with only prisma runtime deps
+          # npm install in deploy/ will pull @prisma/client + ALL transitive deps
+          cat > deploy/package.json << 'EOF'
+          {
+            "name": "realtynest-api",
+            "type": "module",
+            "scripts": { "start": "node server.js" },
+            "dependencies": {
+              "@prisma/client": "^7.0.0"
+            }
+          }
+          EOF
+
+          # Install only prisma runtime deps (clean, complete node_modules)
+          cd deploy
+          npm install --production --no-audit --ignore-scripts
+          cd ..
+
+          # Copy generated prisma client (from prisma generate)
+          PRISMA_ROOT="../node_modules"
+          if [ -d "node_modules/.prisma" ]; then
+            PRISMA_ROOT="node_modules"
+          fi
+          cp -r "$PRISMA_ROOT/.prisma" deploy/node_modules/
+
           # Show deploy size
           echo "=== Deploy package ==="
           du -sh deploy/
+          du -sh deploy/node_modules/
           ls -la deploy/
-          ls -la deploy/_modules/
 
       - name: Login to Azure
         uses: azure/login@v2
