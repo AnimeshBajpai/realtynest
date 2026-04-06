@@ -33,3 +33,10 @@ server/prisma/*.db
 
 # Azure
 .azure/
+
+# Deployment artifacts
+app_logs*
+server-test-deploy.zip
+server/deploy_test/
+server/startup.sh
+*.zip
