@@ -10,22 +10,26 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: realtynest-api
-  NODE_VERSION: '20.x'
+  NODE_VERSION: '20'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         working-directory: ./server
-        run: npm install
+        run: npm install --no-audit
 
       - name: Generate Prisma Client
         working-directory: ./server
@@ -41,30 +45,30 @@ jobs:
           mkdir -p deploy
           cp -r dist/* deploy/
           cp -r prisma deploy/
-          # Create a deploy-specific package.json with correct start script
+          cp package.json deploy/
+          cd deploy
+          # Override start script for Azure
           node -e "
-            const pkg = require('./package.json');
-            const deployPkg = {
-              name: pkg.name,
-              version: pkg.version,
-              type: 'module',
-              scripts: { start: 'node index.js' },
-              dependencies: { ...pkg.dependencies }
-            };
-            require('fs').writeFileSync('deploy/package.json', JSON.stringify(deployPkg, null, 2));
+            const pkg = JSON.parse(require('fs').readFileSync('package.json','utf8'));
+            pkg.scripts = { start: 'node index.js' };
+            pkg.main = 'index.js';
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
-          cat deploy/package.json
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          npm install --omit=dev --ignore-scripts --no-audit
+          npx prisma generate
+          # Cleanup caches
+          rm -rf node_modules/.cache
 
       - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_SERVER }}
+          package: ./server/deploy
+          clean: true
+
+      - name: Deployment Status
         run: |
-          cd server/deploy
-          zip -qr ../../server-deploy.zip .
-          ls -lh ../../server-deploy.zip
-          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip --async true
+          echo "✅ Server deployment completed!"
 
 

@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { userController } from '../controllers/user.controller.js';
+import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+const router = Router();
+router.use(authenticateToken);
+router.post('/', authorizeRoles('AGENCY_ADMIN'), userController.createBroker);
+router.get('/', userController.listBrokers);
+router.get('/:id', userController.getBroker);
+router.put('/:id', userController.updateProfile);
+router.patch('/:id/status', authorizeRoles('AGENCY_ADMIN'), userController.toggleStatus);
+export default router;

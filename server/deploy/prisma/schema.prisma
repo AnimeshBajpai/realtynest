@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  BROKER
+}
+
+enum LeadSource {
+  WALK_IN
+  PHONE
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  SITE_VISIT
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum LeadPriority {
+  HOT
+  WARM
+  COLD
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  PLOT
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  SOLD
+  RESERVED
+}
+
+enum InterestLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CommunicationType {
+  CALL
+  MEETING
+  EMAIL
+  SMS
+  NOTE
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model Agency {
+  id               String           @id @default(uuid())
+  name             String
+  address          String?
+  phone            String?
+  email            String?
+  logoUrl          String?
+  subscriptionPlan SubscriptionPlan @default(FREE)
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  users      User[]
+  leads      Lead[]
+  properties Property[]
+}
+
+model User {
+  id           String    @id @default(uuid())
+  agencyId     String?
+  role         UserRole  @default(BROKER)
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  agency Agency? @relation(fields: [agencyId], references: [id])
+
+  assignedLeads  Lead[]          @relation("AssignedTo")
+  createdLeads   Lead[]          @relation("CreatedBy")
+  communications Communication[]
+  notifications  Notification[]
+  leadActivities LeadActivity[]
+
+  @@index([agencyId])
+}
+
+model Lead {
+  id                     String       @id @default(uuid())
+  agencyId               String
+  assignedToId           String?
+  createdById            String
+  firstName              String
+  lastName               String
+  email                  String?
+  phone                  String?
+  source                 LeadSource   @default(OTHER)
+  status                 LeadStatus   @default(NEW)
+  priority               LeadPriority @default(WARM)
+  budgetMin              Float?
+  budgetMax              Float?
+  preferredLocation      String?
+  propertyTypePreference String?
+  notes                  String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  agency     Agency @relation(fields: [agencyId], references: [id])
+  assignedTo User?  @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  leadProperties LeadProperty[]
+  communications Communication[]
+  activities     LeadActivity[]
+
+  @@index([agencyId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Property {
+  id          String         @id @default(uuid())
+  agencyId    String
+  name        String
+  type        PropertyType
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  latitude    Float?
+  longitude   Float?
+  price       Float?
+  areaSqft    Float?
+  bedrooms    Int?
+  bathrooms   Int?
+  status      PropertyStatus @default(AVAILABLE)
+  description String?
+  images      Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  agency Agency @relation(fields: [agencyId], references: [id])
+
+  leadProperties LeadProperty[]
+
+  @@index([agencyId])
+  @@index([status])
+}
+
+model LeadProperty {
+  id            String        @id @default(uuid())
+  leadId        String
+  propertyId    String
+  interestLevel InterestLevel @default(MEDIUM)
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  lead     Lead     @relation(fields: [leadId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([leadId, propertyId])
+  @@index([leadId])
+  @@index([propertyId])
+}
+
+model Communication {
+  id          String            @id @default(uuid())
+  leadId      String
+  userId      String
+  type        CommunicationType
+  subject     String?
+  body        String?
+  outcome     String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime          @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String?
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model LeadActivity {
+  id        String   @id @default(uuid())
+  leadId    String
+  userId    String
+  action    String
+  oldValue  String?
+  newValue  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([createdAt])
+}
