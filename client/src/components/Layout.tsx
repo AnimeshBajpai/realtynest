@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Menu,
+  Landmark,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
@@ -18,15 +19,6 @@ interface NavItem {
   path: string
   icon: React.ElementType
 }
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Leads', path: '/leads', icon: Users },
-  { label: 'Properties', path: '/properties', icon: Building2 },
-  { label: 'Team', path: '/team', icon: UserCog },
-  { label: 'Notifications', path: '/notifications', icon: Bell },
-  { label: 'Settings', path: '/settings', icon: Settings },
-]
 
 const roleBadgeColors: Record<string, string> = {
   SUPER_ADMIN: 'bg-danger/10 text-danger',
@@ -45,7 +37,19 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, logout } = useAuthStore()
 
-  const userInitials = user
+  const navItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Leads', path: '/leads', icon: Users },
+    { label: 'Properties', path: '/properties', icon: Building2 },
+    { label: 'Team', path: '/team', icon: UserCog },
+    ...(user?.role === 'SUPER_ADMIN'
+      ? [{ label: 'Agencies', path: '/admin/agencies', icon: Landmark }]
+      : []),
+    { label: 'Notifications', path: '/notifications', icon: Bell },
+    { label: 'Settings', path: '/settings', icon: Settings },
+  ]
+
+  const userInitials= user
     ? `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase() || 'U'
     : 'U'
   const displayName = user

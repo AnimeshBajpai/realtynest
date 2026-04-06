@@ -12,6 +12,7 @@ import PropertyDetailPage from './pages/PropertyDetailPage'
 import TeamPage from './pages/TeamPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
+import AdminAgenciesPage from './pages/AdminAgenciesPage'
 import { useAuthStore } from './store/authStore'
 import { Loader2 } from 'lucide-react'
 
@@ -50,6 +51,7 @@ function AppWrapper() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/admin/agencies" element={<AdminAgenciesPage />} />
         </Route>
       </Route>
 
