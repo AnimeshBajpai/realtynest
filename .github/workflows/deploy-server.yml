@@ -54,4 +54,4 @@ jobs:
         run: |
           cd server/deploy
           zip -qr ../../server-deploy.zip .
-          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip
+          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip --restart true
