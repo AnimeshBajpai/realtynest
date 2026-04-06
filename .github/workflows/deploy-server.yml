@@ -60,12 +60,11 @@ jobs:
           rm -rf node_modules/.cache
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_SERVER }}
           package: ./server/deploy
-          clean: true
 
       - name: Deployment Status
         run: |
