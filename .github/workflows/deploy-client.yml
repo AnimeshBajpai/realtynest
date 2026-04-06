@@ -22,12 +22,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm install
 
       - name: Build
         working-directory: ./client
@@ -38,7 +36,7 @@ jobs:
       - name: Create web.config for SPA routing
         working-directory: ./client/dist
         run: |
-          cat > web.config << 'EOF'
+          cat > web.config << 'XMLEOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <configuration>
             <system.webServer>
@@ -55,11 +53,12 @@ jobs:
                 </rules>
               </rewrite>
               <staticContent>
+                <remove fileExtension=".json" />
                 <mimeMap fileExtension=".json" mimeType="application/json" />
               </staticContent>
             </system.webServer>
           </configuration>
-          EOF
+          XMLEOF
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
