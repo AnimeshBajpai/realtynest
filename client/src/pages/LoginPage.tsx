@@ -1,15 +1,32 @@
-import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
-import { Building2 } from 'lucide-react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Building2, Loader2 } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const { login, isLoading, isAuthenticated, clearError } = useAuthStore()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: FormEvent) => {
+  useEffect(() => {
+    clearError()
+  }, [clearError])
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    // TODO: integrate with auth API
-    console.log('Login:', { email, password })
+    setError('')
+    try {
+      await login(email, password)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    }
   }
 
   return (
@@ -29,6 +46,12 @@ export default function LoginPage() {
         {/* Card */}
         <div className="rounded-xl border border-gray-200 bg-surface p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger">
+                {error}
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="email"
@@ -67,9 +90,11 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
             >
-              Sign In
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isLoading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 

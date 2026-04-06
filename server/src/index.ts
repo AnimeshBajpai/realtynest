@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import router from './routes/index.js';
 
 const app = express();
 
@@ -21,10 +22,8 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// Routes
+app.use('/api', router);
 
 // Global error handler
 app.use(errorHandler);

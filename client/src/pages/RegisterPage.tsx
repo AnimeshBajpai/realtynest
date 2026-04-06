@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
-import { Building2 } from 'lucide-react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Building2, Loader2 } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -11,14 +12,42 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   })
+  const [error, setError] = useState('')
+  const { register, isLoading, isAuthenticated, clearError } = useAuthStore()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    clearError()
+  }, [clearError])
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    // TODO: integrate with auth API
-    console.log('Register:', form)
+    setError('')
+
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    try {
+      await register({
+        agencyName: form.agencyName,
+        adminName: form.adminName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+      })
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed')
+    }
   }
 
   const inputClass =
@@ -39,6 +68,12 @@ export default function RegisterPage() {
         {/* Card */}
         <div className="rounded-xl border border-gray-200 bg-surface p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger">
+                {error}
+              </div>
+            )}
+
             <div>
               <label htmlFor="agencyName" className="mb-1.5 block text-sm font-medium text-text">
                 Agency Name
@@ -129,9 +164,11 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
             >
-              Create Agency
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isLoading ? 'Creating…' : 'Create Agency'}
             </button>
           </form>
 

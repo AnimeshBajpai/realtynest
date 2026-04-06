@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -11,6 +11,7 @@ import {
   Menu,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { useAuthStore } from '../store/authStore'
 
 interface NavItem {
   label: string
@@ -27,14 +28,32 @@ const navItems: NavItem[] = [
   { label: 'Settings', path: '/settings', icon: Settings },
 ]
 
+const roleBadgeColors: Record<string, string> = {
+  SUPER_ADMIN: 'bg-danger/10 text-danger',
+  AGENCY_ADMIN: 'bg-primary/10 text-primary',
+  BROKER: 'bg-success/10 text-success',
+}
+
+const roleLabels: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
+  AGENCY_ADMIN: 'Admin',
+  BROKER: 'Broker',
+}
+
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
+
+  const userInitials = user
+    ? `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase() || 'U'
+    : 'U'
+  const displayName = user
+    ? `${user.firstName} ${user.lastName}`.trim() || user.email
+    : 'User'
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/login')
+    logout()
   }
 
   return (
@@ -126,11 +145,21 @@ export default function Layout() {
             </button>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">
-                A
+                {userInitials}
               </div>
               <span className="hidden text-sm font-medium text-text sm:block">
-                Admin
+                {displayName}
               </span>
+              {user?.role && (
+                <span
+                  className={cn(
+                    'hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-block',
+                    roleBadgeColors[user.role] ?? 'bg-gray-100 text-gray-600'
+                  )}
+                >
+                  {roleLabels[user.role] ?? user.role}
+                </span>
+              )}
             </div>
           </div>
         </header>
