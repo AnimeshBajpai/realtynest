@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: realtynest-server
+  AZURE_WEBAPP_NAME: realtynest-api
   NODE_VERSION: '20.x'
 
 jobs:
@@ -42,27 +42,8 @@ jobs:
           cp -r dist/* deploy/
           cp package.json deploy/
           cp -r prisma deploy/
-          cat > deploy/web.config << 'XMLEOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <system.webServer>
-              <handlers>
-                <add name="iisnode" path="index.js" verb="*" modules="iisnode"/>
-              </handlers>
-              <rewrite>
-                <rules>
-                  <rule name="DynamicContent">
-                    <conditions>
-                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                    </conditions>
-                    <action type="Rewrite" url="index.js"/>
-                  </rule>
-                </rules>
-              </rewrite>
-              <iisnode node_env="production" />
-            </system.webServer>
-          </configuration>
-          XMLEOF
+          cd deploy && npm install --omit=dev --ignore-scripts
+          npx prisma generate
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -72,5 +53,5 @@ jobs:
       - name: Deploy to Azure Web App
         run: |
           cd server/deploy
-          zip -r ../../server-deploy.zip .
+          zip -qr ../../server-deploy.zip .
           az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip

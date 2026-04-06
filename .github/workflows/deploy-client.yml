@@ -31,34 +31,18 @@ jobs:
         working-directory: ./client
         run: npm run build
         env:
-          VITE_API_URL: https://realtynest-server.azurewebsites.net/api
+          VITE_API_URL: https://realtynest-api.azurewebsites.net/api
 
       - name: Create web.config for SPA routing
         working-directory: ./client/dist
         run: |
-          cat > web.config << 'XMLEOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <configuration>
-            <system.webServer>
-              <rewrite>
-                <rules>
-                  <rule name="SPA" stopProcessing="true">
-                    <match url=".*" />
-                    <conditions logicalGrouping="MatchAll">
-                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                      <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
-                    </conditions>
-                    <action type="Rewrite" url="/" />
-                  </rule>
-                </rules>
-              </rewrite>
-              <staticContent>
-                <remove fileExtension=".json" />
-                <mimeMap fileExtension=".json" mimeType="application/json" />
-              </staticContent>
-            </system.webServer>
-          </configuration>
-          XMLEOF
+          cat > staticwebapp.config.json << 'EOF'
+          {
+            "navigationFallback": {
+              "rewrite": "/index.html"
+            }
+          }
+          EOF
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -68,5 +52,5 @@ jobs:
       - name: Deploy to Azure Web App
         run: |
           cd client/dist
-          zip -r ../../client-deploy.zip .
+          zip -qr ../../client-deploy.zip .
           az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../client-deploy.zip --type zip
