@@ -63,8 +63,6 @@ jobs:
             </system.webServer>
           </configuration>
           XMLEOF
-          cd deploy && npm install --omit=dev --ignore-scripts
-          npx prisma generate
 
       - name: Login to Azure
         uses: azure/login@v2
