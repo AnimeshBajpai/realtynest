@@ -66,9 +66,13 @@ jobs:
           cd deploy && npm install --omit=dev --ignore-scripts
           npx prisma generate
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_SERVER }}
-          package: ./server/deploy
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        run: |
+          cd server/deploy
+          zip -r ../../server-deploy.zip .
+          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip

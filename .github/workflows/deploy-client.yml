@@ -60,9 +60,13 @@ jobs:
           </configuration>
           XMLEOF
 
-      - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_CLIENT }}
-          package: ./client/dist
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        run: |
+          cd client/dist
+          zip -r ../../client-deploy.zip .
+          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../client-deploy.zip --type zip
