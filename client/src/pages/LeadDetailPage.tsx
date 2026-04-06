@@ -1,12 +1,651 @@
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  Home,
+  DollarSign,
+  Loader2,
+  Pencil,
+  Clock,
+  User,
+  X,
+  Check,
+} from 'lucide-react'
+import { format, formatDistanceToNow } from 'date-fns'
+import { cn } from '../lib/utils'
+import { useLeadStore } from '../store/leadStore'
+import type { LeadStatus, LeadSource, LeadPriority, Lead } from '../types'
+
+const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
+  { value: 'NEW', label: 'New' },
+  { value: 'CONTACTED', label: 'Contacted' },
+  { value: 'QUALIFIED', label: 'Qualified' },
+  { value: 'SITE_VISIT', label: 'Site Visit' },
+  { value: 'NEGOTIATION', label: 'Negotiation' },
+  { value: 'CLOSED_WON', label: 'Closed Won' },
+  { value: 'CLOSED_LOST', label: 'Closed Lost' },
+]
+
+const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
+  { value: 'WALK_IN', label: 'Walk-in' },
+  { value: 'PHONE', label: 'Phone' },
+  { value: 'WEBSITE', label: 'Website' },
+  { value: 'REFERRAL', label: 'Referral' },
+  { value: 'SOCIAL_MEDIA', label: 'Social Media' },
+  { value: 'OTHER', label: 'Other' },
+]
+
+const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
+  { value: 'HOT', label: 'Hot' },
+  { value: 'WARM', label: 'Warm' },
+  { value: 'COLD', label: 'Cold' },
+]
+
+const statusColors: Record<LeadStatus, string> = {
+  NEW: 'bg-blue-50 text-blue-700',
+  CONTACTED: 'bg-yellow-50 text-yellow-700',
+  QUALIFIED: 'bg-purple-50 text-purple-700',
+  SITE_VISIT: 'bg-indigo-50 text-indigo-700',
+  NEGOTIATION: 'bg-orange-50 text-orange-700',
+  CLOSED_WON: 'bg-green-50 text-green-700',
+  CLOSED_LOST: 'bg-red-50 text-red-700',
+}
+
+const priorityColors: Record<LeadPriority, string> = {
+  HOT: 'bg-red-50 text-red-700',
+  WARM: 'bg-orange-50 text-orange-700',
+  COLD: 'bg-blue-50 text-blue-700',
+}
+
+const inputClass =
+  'block w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-secondary/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+const labelClass = 'block text-sm font-medium text-text-secondary mb-1'
+
+function formatBudget(min?: number, max?: number) {
+  if (!min && !max) return null
+  const fmt = (n: number) =>
+    n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`
+  if (min) return `From ${fmt(min)}`
+  return `Up to ${fmt(max!)}`
+}
 
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const {
+    selectedLead: lead,
+    timeline,
+    isLoading,
+    error,
+    fetchLead,
+    fetchTimeline,
+    updateLead,
+    updateLeadStatus,
+    clearSelectedLead,
+  } = useLeadStore()
+
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState<Partial<Lead>>({})
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+
+  useEffect(() => {
+    if (id) {
+      fetchLead(id)
+      fetchTimeline(id)
+    }
+    return () => clearSelectedLead()
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startEditing = () => {
+    if (!lead) return
+    setEditForm({
+      firstName: lead.firstName,
+      lastName: lead.lastName,
+      email: lead.email ?? '',
+      phone: lead.phone ?? '',
+      source: lead.source,
+      priority: lead.priority,
+      budgetMin: lead.budgetMin,
+      budgetMax: lead.budgetMax,
+      preferredLocation: lead.preferredLocation ?? '',
+      propertyTypePreference: lead.propertyTypePreference ?? '',
+      notes: lead.notes ?? '',
+    })
+    setEditing(true)
+  }
+
+  const cancelEditing = () => setEditing(false)
+
+  const saveEditing = async () => {
+    if (!id) return
+    await updateLead(id, editForm)
+    setEditing(false)
+  }
+
+  const handleStatusChange = async (status: LeadStatus) => {
+    if (!id) return
+    await updateLeadStatus(id, status)
+    setStatusDropdownOpen(false)
+  }
+
+  if (isLoading && !lead) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (error && !lead) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-danger">{error}</p>
+        <button
+          onClick={() => navigate('/leads')}
+          className="mt-4 text-sm font-medium text-primary hover:underline"
+        >
+          Back to Leads
+        </button>
+      </div>
+    )
+  }
+
+  if (!lead) return null
+
+  const budget = formatBudget(lead.budgetMin, lead.budgetMax)
+  const statusLabel = STATUS_OPTIONS.find((s) => s.value === lead.status)?.label ?? lead.status
+  const sourceLabel = SOURCE_OPTIONS.find((s) => s.value === lead.source)?.label ?? lead.source
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-text">Lead Detail</h1>
-      <p className="mt-1 text-text-secondary">Viewing lead #{id}</p>
+    <div className="mx-auto max-w-4xl">
+      {/* Back button */}
+      <button
+        onClick={() => navigate('/leads')}
+        className="mb-4 flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-text"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Leads
+      </button>
+
+      {/* Lead header */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-surface p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-text">
+                {lead.firstName} {lead.lastName}
+              </h1>
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  statusColors[lead.status]
+                )}
+              >
+                {statusLabel}
+              </span>
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 text-xs font-medium',
+                  priorityColors[lead.priority]
+                )}
+              >
+                {lead.priority}
+              </span>
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+                {sourceLabel}
+              </span>
+            </div>
+            {lead.assignedTo && (
+              <p className="mt-2 text-sm text-text-secondary">
+                Assigned to{' '}
+                <span className="font-medium text-text">
+                  {lead.assignedTo.firstName} {lead.assignedTo.lastName}
+                </span>
+              </p>
+            )}
+            <p className="mt-1 text-xs text-text-secondary">
+              Created {format(new Date(lead.createdAt), 'MMM d, yyyy')} · Updated{' '}
+              {formatDistanceToNow(new Date(lead.updatedAt), { addSuffix: true })}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={startEditing}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </button>
+            {/* Status dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-text hover:bg-gray-50"
+              >
+                Change Status
+              </button>
+              {statusDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setStatusDropdownOpen(false)}
+                  />
+                  <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-surface py-1 shadow-lg">
+                    {STATUS_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => handleStatusChange(opt.value)}
+                        className={cn(
+                          'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50',
+                          lead.status === opt.value
+                            ? 'font-medium text-primary'
+                            : 'text-text'
+                        )}
+                      >
+                        {lead.status === opt.value && <Check className="h-3.5 w-3.5" />}
+                        <span className={lead.status === opt.value ? '' : 'pl-5'}>
+                          {opt.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Info card */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+            <h2 className="mb-4 text-base font-semibold text-text">Contact Information</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-50 p-2">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Email</p>
+                  <p className="text-sm font-medium text-text">
+                    {lead.email || '—'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-green-50 p-2">
+                  <Phone className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">Phone</p>
+                  <p className="text-sm font-medium text-text">
+                    {lead.phone || '—'}
+                  </p>
+                </div>
+              </div>
+              {budget && (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2">
+                    <DollarSign className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Budget</p>
+                    <p className="text-sm font-medium text-text">{budget}</p>
+                  </div>
+                </div>
+              )}
+              {lead.preferredLocation && (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-purple-50 p-2">
+                    <MapPin className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Preferred Location</p>
+                    <p className="text-sm font-medium text-text">
+                      {lead.preferredLocation}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {lead.propertyTypePreference && (
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-indigo-50 p-2">
+                    <Home className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Property Type</p>
+                    <p className="text-sm font-medium text-text">
+                      {lead.propertyTypePreference}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {lead.notes && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <p className="text-xs font-medium text-text-secondary">Notes</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-text">{lead.notes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+            <h2 className="mb-4 text-base font-semibold text-text">Activity Timeline</h2>
+            {timeline.length === 0 ? (
+              <p className="py-6 text-center text-sm text-text-secondary">
+                No activity yet
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {timeline.map((activity) => (
+                  <div key={activity.id} className="flex gap-3">
+                    <div className="relative flex flex-col items-center">
+                      <div className="rounded-full bg-gray-100 p-1.5">
+                        <Clock className="h-3.5 w-3.5 text-text-secondary" />
+                      </div>
+                      <div className="mt-1 flex-1 w-px bg-gray-200" />
+                    </div>
+                    <div className="flex-1 pb-4">
+                      <p className="text-sm text-text">
+                        <span className="font-medium">
+                          {activity.user
+                            ? `${activity.user.firstName} ${activity.user.lastName}`
+                            : 'System'}
+                        </span>{' '}
+                        {activity.action}
+                        {activity.oldValue && activity.newValue && (
+                          <span className="text-text-secondary">
+                            {' '}
+                            from{' '}
+                            <span className="font-medium text-text">{activity.oldValue}</span>{' '}
+                            to{' '}
+                            <span className="font-medium text-text">{activity.newValue}</span>
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-xs text-text-secondary">
+                        {formatDistanceToNow(new Date(activity.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar info */}
+        <div className="space-y-6">
+          <div className="rounded-xl border border-gray-200 bg-surface p-6">
+            <h3 className="mb-3 text-sm font-semibold text-text">Lead Details</h3>
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-text-secondary">Status</dt>
+                <dd className="mt-0.5">
+                  <span
+                    className={cn(
+                      'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                      statusColors[lead.status]
+                    )}
+                  >
+                    {statusLabel}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Priority</dt>
+                <dd className="mt-0.5">
+                  <span
+                    className={cn(
+                      'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
+                      priorityColors[lead.priority]
+                    )}
+                  >
+                    {lead.priority}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Source</dt>
+                <dd className="mt-0.5 font-medium text-text">{sourceLabel}</dd>
+              </div>
+              {lead.assignedTo && (
+                <div>
+                  <dt className="text-text-secondary">Assigned To</dt>
+                  <dd className="mt-0.5 flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-text-secondary" />
+                    <span className="font-medium text-text">
+                      {lead.assignedTo.firstName} {lead.assignedTo.lastName}
+                    </span>
+                  </dd>
+                </div>
+              )}
+              {lead.createdBy && (
+                <div>
+                  <dt className="text-text-secondary">Created By</dt>
+                  <dd className="mt-0.5 font-medium text-text">
+                    {lead.createdBy.firstName} {lead.createdBy.lastName}
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-text-secondary">Created</dt>
+                <dd className="mt-0.5 font-medium text-text">
+                  {format(new Date(lead.createdAt), 'MMM d, yyyy h:mm a')}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-secondary">Updated</dt>
+                <dd className="mt-0.5 font-medium text-text">
+                  {format(new Date(lead.updatedAt), 'MMM d, yyyy h:mm a')}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-[5vh]">
+          <div className="w-full max-w-lg rounded-xl bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 className="text-lg font-semibold text-text">Edit Lead</h2>
+              <button
+                onClick={cancelEditing}
+                className="rounded-lg p-1 text-text-secondary hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4 px-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>First Name</label>
+                  <input
+                    type="text"
+                    value={editForm.firstName ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, firstName: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Last Name</label>
+                  <input
+                    type="text"
+                    value={editForm.lastName ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, lastName: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input
+                    type="email"
+                    value={(editForm.email as string) ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, email: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input
+                    type="tel"
+                    value={(editForm.phone as string) ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, phone: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Source</label>
+                  <select
+                    value={editForm.source ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({
+                        ...p,
+                        source: e.target.value as LeadSource,
+                      }))
+                    }
+                    className={inputClass}
+                  >
+                    {SOURCE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Priority</label>
+                  <select
+                    value={editForm.priority ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({
+                        ...p,
+                        priority: e.target.value as LeadPriority,
+                      }))
+                    }
+                    className={inputClass}
+                  >
+                    {PRIORITY_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Budget Min</label>
+                  <input
+                    type="number"
+                    value={editForm.budgetMin ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({
+                        ...p,
+                        budgetMin: e.target.value ? Number(e.target.value) : undefined,
+                      }))
+                    }
+                    className={inputClass}
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Budget Max</label>
+                  <input
+                    type="number"
+                    value={editForm.budgetMax ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({
+                        ...p,
+                        budgetMax: e.target.value ? Number(e.target.value) : undefined,
+                      }))
+                    }
+                    className={inputClass}
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Preferred Location</label>
+                  <input
+                    type="text"
+                    value={(editForm.preferredLocation as string) ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({ ...p, preferredLocation: e.target.value }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Property Type</label>
+                  <input
+                    type="text"
+                    value={(editForm.propertyTypePreference as string) ?? ''}
+                    onChange={(e) =>
+                      setEditForm((p) => ({
+                        ...p,
+                        propertyTypePreference: e.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  value={(editForm.notes as string) ?? ''}
+                  onChange={(e) =>
+                    setEditForm((p) => ({ ...p, notes: e.target.value }))
+                  }
+                  className={cn(inputClass, 'min-h-[80px] resize-y')}
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-text hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveEditing}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
