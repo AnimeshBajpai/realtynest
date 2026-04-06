@@ -65,12 +65,13 @@ jobs:
           npm install --omit=dev --no-audit --ignore-scripts
           cd ..
 
-          # Copy generated prisma client over the installed one
+          # Copy generated prisma client (from prisma generate) — uses non-dot name
+          # to avoid Kudu's tar excluding dot-prefixed directories
           PRISMA_ROOT="../node_modules"
-          if [ -d "node_modules/.prisma" ]; then
+          if [ -d "node_modules/generated-prisma-client" ]; then
             PRISMA_ROOT="node_modules"
           fi
-          cp -r "$PRISMA_ROOT/.prisma" deploy/node_modules/
+          cp -r "$PRISMA_ROOT/generated-prisma-client" deploy/node_modules/
 
           # Show deploy size
           echo "=== Deploy package ==="

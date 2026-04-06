@@ -7,8 +7,8 @@ await esbuild.build({
   target: 'node20',
   format: 'esm',
   outfile: 'bundle/server.js',
-  // Prisma must be external — it needs its generated client + query engine at runtime
-  external: ['@prisma/client', '.prisma/client'],
+  // Prisma generated client + runtime must be external (loaded from node_modules at runtime)
+  external: ['generated-prisma-client', '@prisma/client', '@prisma/client/*'],
   banner: {
     // Provide require() for CJS packages that need it in ESM context
     js: `import { createRequire } from 'module'; const require = createRequire(import.meta.url);`,
