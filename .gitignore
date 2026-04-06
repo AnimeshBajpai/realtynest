@@ -40,3 +40,5 @@ server-test-deploy.zip
 server/deploy_test/
 server/startup.sh
 *.zip
+
+server/deploy/
