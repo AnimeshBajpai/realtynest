@@ -41,15 +41,15 @@ jobs:
         working-directory: ./server
         run: |
           mkdir -p deploy
+
           # Copy the single bundled server file
           cp bundle/server.js deploy/
 
-          # Copy prisma schema (needed for prisma client)
+          # Copy prisma schema
           cp -r prisma deploy/
 
-          # Create package.json with only prisma runtime deps
-          # npm install in deploy/ will pull @prisma/client + ALL transitive deps
-          cat > deploy/package.json << 'EOF'
+          # Create package.json with prisma runtime dep
+          cat > deploy/package.json << 'PKGJSON'
           {
             "name": "realtynest-api",
             "type": "module",
@@ -58,14 +58,14 @@ jobs:
               "@prisma/client": "^7.0.0"
             }
           }
-          EOF
+          PKGJSON
 
-          # Install only prisma runtime deps (clean, complete node_modules)
+          # Install prisma runtime + all transitive deps (clean node_modules)
           cd deploy
-          npm install --production --no-audit --ignore-scripts
+          npm install --omit=dev --no-audit --ignore-scripts
           cd ..
 
-          # Copy generated prisma client (from prisma generate)
+          # Copy generated prisma client over the installed one
           PRISMA_ROOT="../node_modules"
           if [ -d "node_modules/.prisma" ]; then
             PRISMA_ROOT="node_modules"
@@ -78,18 +78,25 @@ jobs:
           du -sh deploy/node_modules/
           ls -la deploy/
 
+      - name: Create deployment zip
+        working-directory: ./server/deploy
+        run: zip -qr ../../server-deploy.zip .
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ./server/deploy
+        run: |
+          az webapp deploy \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group realtynest-rg \
+            --src-path server-deploy.zip \
+            --type zip \
+            --async true
 
-      - name: Deployment Status
-        run: echo "✅ Server deployment completed!"
-
-
+      - name: Verify deployment
+        run: |
+          echo "✅ Server deployment initiated!"
+          echo "App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
