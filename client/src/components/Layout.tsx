@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Users,
@@ -10,9 +10,12 @@ import {
   LogOut,
   Menu,
   Landmark,
+  Search,
+  X,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
+import api from '../lib/api'
 
 interface NavItem {
   label: string
@@ -32,10 +35,165 @@ const roleLabels: Record<string, string> = {
   BROKER: 'Broker',
 }
 
+interface SearchResult {
+  leads: Array<{ id: string; firstName: string; lastName: string; email?: string }>
+  properties: Array<{ id: string; name: string; city?: string }>
+  users: Array<{ id: string; firstName: string; lastName: string; role: string }>
+}
+
+function GlobalSearch() {
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<SearchResult | null>(null)
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const doSearch = useCallback(async (q: string) => {
+    if (q.length < 2) { setResults(null); setOpen(false); return }
+    setLoading(true)
+    try {
+      const { data } = await api.get<SearchResult>('/search', { params: { q } })
+      setResults(data)
+      setOpen(true)
+    } catch {
+      setResults(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const handleChange = (value: string) => {
+    setQuery(value)
+    clearTimeout(timerRef.current)
+    if (value.length < 2) { setResults(null); setOpen(false); return }
+    timerRef.current = setTimeout(() => doSearch(value), 300)
+  }
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
+  const goTo = (path: string) => {
+    setOpen(false)
+    setQuery('')
+    setResults(null)
+    navigate(path)
+  }
+
+  const hasResults = results && (results.leads?.length || results.properties?.length || results.users?.length)
+
+  return (
+    <div ref={containerRef} className="relative hidden sm:block">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Search leads, properties..."
+          className="w-56 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-9 pr-8 text-sm text-text placeholder:text-gray-400 focus:border-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary lg:w-72"
+        />
+        {query && (
+          <button onClick={() => { setQuery(''); setResults(null); setOpen(false) }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-80 rounded-xl border border-gray-200 bg-surface shadow-lg lg:w-96">
+          {loading ? (
+            <div className="flex items-center justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+          ) : !hasResults ? (
+            <div className="px-4 py-6 text-center text-sm text-text-secondary">No results found</div>
+          ) : (
+            <div className="max-h-80 overflow-y-auto py-2">
+              {results.leads?.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">Leads</p>
+                  {results.leads.map((l) => (
+                    <button key={l.id} onClick={() => goTo(`/leads/${l.id}`)} className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-gray-50">
+                      <Users className="h-4 w-4 shrink-0 text-text-secondary" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-text">{l.firstName} {l.lastName}</p>
+                        {l.email && <p className="truncate text-xs text-text-secondary">{l.email}</p>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {results.properties?.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">Properties</p>
+                  {results.properties.map((p) => (
+                    <button key={p.id} onClick={() => goTo(`/properties/${p.id}`)} className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-gray-50">
+                      <Building2 className="h-4 w-4 shrink-0 text-text-secondary" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-text">{p.name}</p>
+                        {p.city && <p className="truncate text-xs text-text-secondary">{p.city}</p>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {results.users?.length > 0 && (
+                <div>
+                  <p className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary">Users</p>
+                  {results.users.map((u) => (
+                    <button key={u.id} onClick={() => goTo('/team')} className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-gray-50">
+                      <UserCog className="h-4 w-4 shrink-0 text-text-secondary" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-text">{u.firstName} {u.lastName}</p>
+                        <p className="truncate text-xs text-text-secondary">{u.role}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const { user, logout } = useAuthStore()
+  const navigate = useNavigate()
+
+  // Fetch unread notification count
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notifications/unread-count')
+      setUnreadCount(data.count ?? 0)
+    } catch {
+      // silent
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [fetchUnreadCount])
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -140,12 +298,20 @@ export default function Layout() {
             >
               <Menu className="h-5 w-5" />
             </button>
+            <GlobalSearch />
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+            <button
+              onClick={() => { navigate('/notifications'); fetchUnreadCount() }}
+              className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-danger" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-white">

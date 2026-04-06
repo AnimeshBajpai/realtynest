@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, UserCheck, TrendingUp, BarChart3, Loader2, ArrowRight, Phone, Calendar, Mail, MessageSquare, FileText } from 'lucide-react'
-import { format } from 'date-fns'
+import {
+  Users, UserCheck, TrendingUp, BarChart3, Loader2, ArrowRight,
+  Phone, Calendar, Mail, MessageSquare, FileText, Building2, Activity,
+} from 'lucide-react'
+import { format, formatDistanceToNow } from 'date-fns'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts'
 import { cn } from '../lib/utils'
-import { useLeadStore } from '../store/leadStore'
+import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
-import type { LeadStatus, LeadPriority, CommunicationType } from '../types'
+import type {
+  LeadStatus, LeadPriority, CommunicationType, Lead,
+  BrokerDashboard, AgencyDashboard, SuperAdminDashboard, LeadActivity,
+} from '../types'
+
+const CHART_COLORS = ['#3b82f6', '#f59e0b', '#8b5cf6', '#6366f1', '#f97316', '#22c55e', '#ef4444']
 
 const statusColors: Record<LeadStatus, string> = {
   NEW: 'bg-blue-50 text-blue-700',
@@ -23,7 +35,7 @@ const priorityColors: Record<LeadPriority, string> = {
   COLD: 'bg-blue-50 text-blue-700',
 }
 
-const STATUS_LABELS: Record<LeadStatus, string> = {
+const STATUS_LABELS: Record<string, string> = {
   NEW: 'New',
   CONTACTED: 'Contacted',
   QUALIFIED: 'Qualified',
@@ -33,243 +45,448 @@ const STATUS_LABELS: Record<LeadStatus, string> = {
   CLOSED_LOST: 'Closed Lost',
 }
 
-export default function DashboardPage() {
-  const navigate = useNavigate()
-  const { stats, leads, isLoading, fetchStats, fetchLeads } = useLeadStore()
+// ─── Shared components ──────────────────────────────────────────
 
-  interface FollowUp {
-    id: string
-    leadId: string
-    type: CommunicationType
-    subject?: string
-    scheduledAt: string
-    lead?: { id: string; firstName: string; lastName: string }
-  }
+function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-surface p-5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-text-secondary">{label}</span>
+        <div className={cn('rounded-lg p-2', color)}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <p className="mt-2 text-3xl font-bold text-text">{value}</p>
+    </div>
+  )
+}
 
-  const [followUps, setFollowUps] = useState<FollowUp[]>([])
-  const [followUpsLoading, setFollowUpsLoading] = useState(false)
-
-  useEffect(() => {
-    fetchStats()
-    fetchLeads()
-    // Fetch upcoming follow-ups
-    const loadFollowUps = async () => {
-      setFollowUpsLoading(true)
-      try {
-        const { data } = await api.get('/follow-ups')
-        setFollowUps(data.followUps ?? data.data ?? [])
-      } catch {
-        setFollowUps([])
-      } finally {
-        setFollowUpsLoading(false)
-      }
-    }
-    loadFollowUps()
-  }, [fetchStats, fetchLeads])
-
-  const followUpIcon = (type: CommunicationType) => {
+function FollowUpsList({ followUps, loading, navigate }: {
+  followUps: Array<{ id: string; leadId: string; type?: CommunicationType; subject?: string; scheduledAt: string; lead?: { id?: string; firstName: string; lastName: string } }>
+  loading: boolean
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const followUpIcon = (type?: CommunicationType) => {
     switch (type) {
       case 'CALL': return <Phone className="h-4 w-4" />
       case 'MEETING': return <Calendar className="h-4 w-4" />
       case 'EMAIL': return <Mail className="h-4 w-4" />
       case 'SMS': return <MessageSquare className="h-4 w-4" />
       case 'NOTE': return <FileText className="h-4 w-4" />
+      default: return <Calendar className="h-4 w-4" />
     }
   }
 
-  const activeLeads = stats
-    ? stats.total -
-      (stats.byStatus?.CLOSED_WON ?? 0) -
-      (stats.byStatus?.CLOSED_LOST ?? 0)
-    : 0
+  return (
+    <div className="mt-8">
+      <h2 className="mb-4 text-lg font-semibold text-text">Upcoming Follow-ups</h2>
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : followUps.length === 0 ? (
+          <div className="py-12 text-center text-sm text-text-secondary">No upcoming follow-ups</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {followUps.slice(0, 5).map((fu) => (
+              <div
+                key={fu.id}
+                onClick={() => navigate(`/leads/${fu.lead?.id ?? fu.leadId}`)}
+                className="flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-50"
+              >
+                <div className="rounded-lg bg-gray-100 p-2 text-text-secondary">
+                  {followUpIcon(fu.type)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text">
+                    {fu.lead ? `${fu.lead.firstName} ${fu.lead.lastName}` : 'Unknown Lead'}
+                  </p>
+                  {fu.subject && <p className="truncate text-xs text-text-secondary">{fu.subject}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  {fu.type && (
+                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">{fu.type}</span>
+                  )}
+                  <p className="mt-1 text-xs text-text-secondary">{format(new Date(fu.scheduledAt), 'MMM d, h:mm a')}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
-  const statCards = [
-    {
-      label: 'Total Leads',
-      value: stats ? stats.total.toLocaleString() : '—',
-      icon: Users,
-      color: 'bg-blue-50 text-primary',
-    },
-    {
-      label: 'Active Leads',
-      value: stats ? activeLeads.toLocaleString() : '—',
-      icon: TrendingUp,
-      color: 'bg-amber-50 text-warning',
-    },
-    {
-      label: 'New This Month',
-      value: stats ? stats.newThisMonth.toLocaleString() : '—',
-      icon: UserCheck,
-      color: 'bg-green-50 text-success',
-    },
-    {
-      label: 'Conversion Rate',
-      value: stats ? `${stats.conversionRate.toFixed(1)}%` : '—',
-      icon: BarChart3,
-      color: 'bg-purple-50 text-purple-600',
-    },
+function RecentLeadsTable({ leads, loading, navigate }: { leads: Lead[]; loading: boolean; navigate: ReturnType<typeof useNavigate> }) {
+  return (
+    <div className="mt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-text">Recent Leads</h2>
+        <button onClick={() => navigate('/leads')} className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+          View all <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+        {loading ? (
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : leads.length === 0 ? (
+          <div className="py-12 text-center text-sm text-text-secondary">No leads yet.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-left">
+                <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
+                <th className="hidden px-4 py-3 font-medium text-text-secondary md:table-cell">Email</th>
+                <th className="px-4 py-3 font-medium text-text-secondary">Status</th>
+                <th className="px-4 py-3 font-medium text-text-secondary">Priority</th>
+                <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leads.slice(0, 5).map((lead) => (
+                <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} className="cursor-pointer border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-text">{lead.firstName} {lead.lastName}</td>
+                  <td className="hidden px-4 py-3 text-text-secondary md:table-cell">{lead.email || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', statusColors[lead.status])}>{STATUS_LABELS[lead.status] ?? lead.status}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', priorityColors[lead.priority])}>{lead.priority}</span>
+                  </td>
+                  <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">{format(new Date(lead.createdAt), 'MMM d, yyyy')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Broker Dashboard ───────────────────────────────────────────
+
+function BrokerDash() {
+  const navigate = useNavigate()
+  const [data, setData] = useState<BrokerDashboard | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: res } = await api.get('/dashboard/broker')
+        setData(res)
+      } catch {
+        setError('Failed to load dashboard')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (error) return <div className="py-12 text-center text-danger">{error}</div>
+  if (!data) return null
+
+  const stats = [
+    { label: 'My Leads', value: data.myLeads.total.toLocaleString(), icon: Users, color: 'bg-blue-50 text-primary' },
+    { label: 'Active Leads', value: data.myLeads.active.toLocaleString(), icon: TrendingUp, color: 'bg-amber-50 text-warning' },
+    { label: 'Converted', value: data.myLeads.converted.toLocaleString(), icon: UserCheck, color: 'bg-green-50 text-success' },
+    { label: 'Follow-ups Due', value: (data.upcomingFollowUps?.length ?? 0).toLocaleString(), icon: Calendar, color: 'bg-purple-50 text-purple-600' },
   ]
+
+  const statusEntries = Object.entries(data.byStatus ?? {}).map(([status, count]) => ({ status, count: count as number }))
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text">Welcome back!</h1>
-        <p className="text-text-secondary">
-          Here&apos;s what&apos;s happening with your leads today.
-        </p>
-      </div>
-
-      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statCards.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-gray-200 bg-surface p-5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-text-secondary">
-                {stat.label}
-              </span>
-              <div className={cn('rounded-lg p-2', stat.color)}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-            </div>
-            <p className="mt-2 text-3xl font-bold text-text">{stat.value}</p>
-          </div>
-        ))}
+        {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Recent Leads */}
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Recent Leads</h2>
-          <button
-            onClick={() => navigate('/leads')}
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            View all
-            <ArrowRight className="h-4 w-4" />
-          </button>
+      {/* Leads by Status */}
+      {statusEntries.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-text">My Leads by Status</h2>
+          <div className="rounded-xl border border-gray-200 bg-surface p-4">
+            <div className="space-y-3">
+              {statusEntries.map(({ status, count }, i) => {
+                const max = Math.max(...statusEntries.map((e) => e.count), 1)
+                return (
+                  <div key={status} className="flex items-center gap-3">
+                    <span className="w-28 shrink-0 text-sm text-text-secondary">{STATUS_LABELS[status] ?? status}</span>
+                    <div className="flex-1">
+                      <div className="h-6 rounded-full bg-gray-100">
+                        <div
+                          className="flex h-6 items-center rounded-full px-2 text-xs font-medium text-white"
+                          style={{ width: `${Math.max((count / max) * 100, 8)}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                        >
+                          {count}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : leads.length === 0 ? (
-            <div className="py-12 text-center text-sm text-text-secondary">
-              No leads yet. Add your first lead to get started.
-            </div>
-          ) : (
+      {/* Recent Activity */}
+      {data.recentActivity && data.recentActivity.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-text">Recent Activity</h2>
+          <div className="rounded-xl border border-gray-200 bg-surface divide-y divide-gray-100">
+            {data.recentActivity.slice(0, 8).map((act: LeadActivity) => (
+              <div key={act.id} onClick={() => navigate(`/leads/${act.leadId}`)} className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50">
+                <div className="rounded-lg bg-gray-100 p-2 text-text-secondary"><Activity className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-text">{act.action}{act.newValue ? `: ${act.newValue}` : ''}</p>
+                  <p className="text-xs text-text-secondary">{act.user ? `${act.user.firstName} ${act.user.lastName}` : ''}</p>
+                </div>
+                <span className="shrink-0 text-xs text-text-secondary">{formatDistanceToNow(new Date(act.createdAt), { addSuffix: true })}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <FollowUpsList followUps={data.upcomingFollowUps ?? []} loading={false} navigate={navigate} />
+    </div>
+  )
+}
+
+// ─── Agency Admin Dashboard ─────────────────────────────────────
+
+function AgencyAdminDash() {
+  const navigate = useNavigate()
+  const [data, setData] = useState<AgencyDashboard | null>(null)
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [dashRes, leadsRes] = await Promise.all([
+          api.get('/dashboard/agency'),
+          api.get('/leads', { params: { limit: 5 } }),
+        ])
+        setData(dashRes.data)
+        setLeads(leadsRes.data.leads ?? [])
+      } catch {
+        setError('Failed to load dashboard')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (error) return <div className="py-12 text-center text-danger">{error}</div>
+  if (!data) return null
+
+  const stats = [
+    { label: 'Total Leads', value: data.totalLeads.toLocaleString(), icon: Users, color: 'bg-blue-50 text-primary' },
+    { label: 'Active Leads', value: data.activeLeads.toLocaleString(), icon: TrendingUp, color: 'bg-amber-50 text-warning' },
+    { label: 'Converted', value: data.convertedLeads.toLocaleString(), icon: UserCheck, color: 'bg-green-50 text-success' },
+    { label: 'Conversion Rate', value: `${data.conversionRate.toFixed(1)}%`, icon: BarChart3, color: 'bg-purple-50 text-purple-600' },
+  ]
+
+  const sourceData = Object.entries(data.bySource ?? {}).map(([name, value]) => ({ name, value: value as number }))
+
+  return (
+    <div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((s) => <StatCard key={s.label} {...s} />)}
+      </div>
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* Pipeline Funnel */}
+        {data.pipeline && data.pipeline.length > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-surface p-5">
+            <h3 className="mb-4 text-base font-semibold text-text">Pipeline Funnel</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={data.pipeline.map((p) => ({ ...p, label: STATUS_LABELS[p.status] ?? p.status }))} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" />
+                <YAxis dataKey="label" type="category" width={90} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {data.pipeline.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Leads by Source (Donut) */}
+        {sourceData.length > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-surface p-5">
+            <h3 className="mb-4 text-base font-semibold text-text">Leads by Source</h3>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie data={sourceData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} label={({ name, value }) => `${name}: ${value}`}>
+                  {sourceData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Broker Performance */}
+      {data.brokerPerformance && data.brokerPerformance.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-text">Broker Performance</h2>
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left">
-                  <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
-                  <th className="hidden px-4 py-3 font-medium text-text-secondary md:table-cell">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Status</th>
-                  <th className="px-4 py-3 font-medium text-text-secondary">Priority</th>
-                  <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">
-                    Created
-                  </th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Broker</th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Assigned</th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Active</th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Converted</th>
                 </tr>
               </thead>
               <tbody>
-                {leads.slice(0, 5).map((lead) => (
-                  <tr
-                    key={lead.id}
-                    onClick={() => navigate(`/leads/${lead.id}`)}
-                    className="cursor-pointer border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50"
-                  >
-                    <td className="px-4 py-3 font-medium text-text">
-                      {lead.firstName} {lead.lastName}
-                    </td>
-                    <td className="hidden px-4 py-3 text-text-secondary md:table-cell">
-                      {lead.email || '—'}
-                    </td>
+                {data.brokerPerformance.map((broker) => (
+                  <tr key={broker.id} className="border-b border-gray-100 last:border-0">
+                    <td className="px-4 py-3 font-medium text-text">{broker.firstName} {broker.lastName}</td>
+                    <td className="px-4 py-3 text-text-secondary">{broker.assigned}</td>
+                    <td className="px-4 py-3 text-text-secondary">{broker.active}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          statusColors[lead.status]
-                        )}
-                      >
-                        {STATUS_LABELS[lead.status] ?? lead.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          priorityColors[lead.priority]
-                        )}
-                      >
-                        {lead.priority}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">
-                      {format(new Date(lead.createdAt), 'MMM d, yyyy')}
+                      <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">{broker.converted}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
+      )}
+
+      <RecentLeadsTable leads={leads} loading={false} navigate={navigate} />
+    </div>
+  )
+}
+
+// ─── Super Admin Dashboard ──────────────────────────────────────
+
+function SuperAdminDash() {
+  const [data, setData] = useState<SuperAdminDashboard | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: res } = await api.get('/dashboard/admin')
+        setData(res)
+      } catch {
+        setError('Failed to load dashboard')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (error) return <div className="py-12 text-center text-danger">{error}</div>
+  if (!data) return null
+
+  const stats = [
+    { label: 'Total Agencies', value: data.totalAgencies.toLocaleString(), icon: Building2, color: 'bg-blue-50 text-primary' },
+    { label: 'Total Users', value: data.totalUsers.toLocaleString(), icon: Users, color: 'bg-amber-50 text-warning' },
+    { label: 'Total Leads', value: data.totalLeads.toLocaleString(), icon: UserCheck, color: 'bg-green-50 text-success' },
+    { label: 'Conversion Rate', value: `${data.conversionRate.toFixed(1)}%`, icon: BarChart3, color: 'bg-purple-50 text-purple-600' },
+  ]
+
+  return (
+    <div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((s) => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Upcoming Follow-ups */}
-      <div className="mt-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-text">Upcoming Follow-ups</h2>
+      {/* Agencies Table */}
+      {data.agencies && data.agencies.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-text">Agencies</h2>
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left">
+                  <th className="px-4 py-3 font-medium text-text-secondary">Name</th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Leads</th>
+                  <th className="px-4 py-3 font-medium text-text-secondary">Users</th>
+                  <th className="hidden px-4 py-3 font-medium text-text-secondary sm:table-cell">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.agencies.map((agency) => (
+                  <tr key={agency.id} className="border-b border-gray-100 last:border-0">
+                    <td className="px-4 py-3 font-medium text-text">{agency.name}</td>
+                    <td className="px-4 py-3 text-text-secondary">{agency.leadCount}</td>
+                    <td className="px-4 py-3 text-text-secondary">{agency.userCount}</td>
+                    <td className="hidden px-4 py-3 text-text-secondary sm:table-cell">{format(new Date(agency.createdAt), 'MMM d, yyyy')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+      )}
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-surface">
-          {followUpsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : followUps.length === 0 ? (
-            <div className="py-12 text-center text-sm text-text-secondary">
-              No upcoming follow-ups
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {followUps.slice(0, 5).map((fu) => (
-                <div
-                  key={fu.id}
-                  onClick={() => fu.lead && navigate(`/leads/${fu.lead.id ?? fu.leadId}`)}
-                  className="flex cursor-pointer items-center gap-4 px-4 py-3 transition-colors hover:bg-gray-50"
-                >
-                  <div className="rounded-lg bg-gray-100 p-2 text-text-secondary">
-                    {followUpIcon(fu.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text">
-                      {fu.lead
-                        ? `${fu.lead.firstName} ${fu.lead.lastName}`
-                        : 'Unknown Lead'}
-                    </p>
-                    {fu.subject && (
-                      <p className="text-xs text-text-secondary truncate">{fu.subject}</p>
-                    )}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                      {fu.type}
-                    </span>
-                    <p className="mt-1 text-xs text-text-secondary">
-                      {format(new Date(fu.scheduledAt), 'MMM d, h:mm a')}
-                    </p>
-                  </div>
+      {/* Recently Created Agencies */}
+      {data.recentAgencies && data.recentAgencies.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-text">Recently Created Agencies</h2>
+          <div className="rounded-xl border border-gray-200 bg-surface divide-y divide-gray-100">
+            {data.recentAgencies.map((agency) => (
+              <div key={agency.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="rounded-lg bg-blue-50 p-2 text-primary"><Building2 className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text">{agency.name}</p>
                 </div>
-              ))}
-            </div>
-          )}
+                <span className="shrink-0 text-xs text-text-secondary">{formatDistanceToNow(new Date(agency.createdAt), { addSuffix: true })}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Dashboard Page ────────────────────────────────────────
+
+export default function DashboardPage() {
+  const { user } = useAuthStore()
+  const role = user?.role
+
+  const greetings: Record<string, string> = {
+    BROKER: "Here's your personal pipeline overview.",
+    AGENCY_ADMIN: "Here's your agency overview.",
+    SUPER_ADMIN: "Here's your platform overview.",
+  }
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-text">Welcome back!</h1>
+        <p className="text-text-secondary">{greetings[role ?? ''] ?? "Here's what's happening today."}</p>
       </div>
+
+      {role === 'BROKER' && <BrokerDash />}
+      {role === 'AGENCY_ADMIN' && <AgencyAdminDash />}
+      {role === 'SUPER_ADMIN' && <SuperAdminDash />}
     </div>
   )
 }

@@ -145,3 +145,44 @@ export interface Communication {
   createdAt: string
   user?: { firstName: string; lastName: string }
 }
+
+// Dashboard types
+export interface BrokerDashboard {
+  myLeads: { total: number; active: number; converted: number }
+  byStatus: Record<string, number>
+  upcomingFollowUps: Array<{ id: string; leadId: string; subject?: string; scheduledAt: string; lead: { firstName: string; lastName: string } }>
+  recentActivity: LeadActivity[]
+}
+
+export interface AgencyDashboard {
+  pipeline: Array<{ status: string; count: number }>
+  bySource: Record<string, number>
+  byPriority: Record<string, number>
+  brokerPerformance: Array<{ id: string; firstName: string; lastName: string; assigned: number; converted: number; active: number }>
+  monthlyTrend: Array<{ month: string; count: number }>
+  propertySummary: { total: number; byStatus: Record<string, number> }
+  conversionRate: number
+  totalLeads: number
+  activeLeads: number
+  convertedLeads: number
+}
+
+export interface SuperAdminDashboard {
+  totalAgencies: number
+  totalUsers: number
+  totalLeads: number
+  conversionRate: number
+  agencies: Array<{ id: string; name: string; leadCount: number; userCount: number; createdAt: string }>
+  recentAgencies: Array<{ id: string; name: string; createdAt: string }>
+}
+
+export interface Notification {
+  id: string
+  userId: string
+  type: string
+  title: string
+  message?: string
+  link?: string
+  isRead: boolean
+  createdAt: string
+}
