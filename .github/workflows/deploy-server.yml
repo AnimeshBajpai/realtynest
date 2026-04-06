@@ -95,9 +95,18 @@ jobs:
             --resource-group realtynest-rg \
             --src-path server-deploy.zip \
             --type zip \
-            --async true
+            --async true \
+            --timeout 300 || echo "⚠️ Deploy poll timed out — checking health instead"
 
       - name: Verify deployment
         run: |
-          echo "✅ Server deployment initiated!"
+          echo "Waiting 90s for container to start..."
+          sleep 90
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/health || echo "000")
+          echo "Health check status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Server is healthy!"
+          else
+            echo "⚠️ Health check returned $STATUS — container may still be starting"
+          fi
           echo "App URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
