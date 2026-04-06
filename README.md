@@ -70,7 +70,7 @@ npm run client   # Web on http://localhost:5173
 The app auto-deploys to Azure via GitHub Actions on push to `main`.
 
 - **Frontend**: https://realtynest-client.azurewebsites.net
-- **Backend API**: https://realtynest-server.azurewebsites.net
+- **Backend API**: https://realtynest-api.azurewebsites.net
 
 ## License
 
