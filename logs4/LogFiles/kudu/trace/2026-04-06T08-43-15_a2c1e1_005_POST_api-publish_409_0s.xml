@@ -1,0 +1,14 @@
+<step title="Incoming Request" date="2026-04-06T08:43:15.008" instance="a2c1e1" url="/api/publish?type=zip&amp;async=True" method="POST" type="request" pid="833,1,7" Accept="*/*" Host="realtynest-api.scm.azurewebsites.net" User-Agent="AZURECLI/2.84.0 (DEB)" Accept-Encoding="gzip, deflate" Authorization="Bea..." Cache-Control="no-cache" Content-Type="application/octet-stream" Cookie="ARRAffinity=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5; ARRAffinitySameSite=a2c1e12fc2a8fc14ae8a91001dd3b12c57783d542691a2ce8d0763ecb8e56ca5" Content-Length="13256" x-ms-client-request-id="99e27eec-3194-11f1-9acb-7c1e52421244" x-ms-artifact-checksum="702327c587662f68409c24cd511a1bb4d19ab38cba862037fbcfa451ef149971" X-ARR-LOG-ID="99e27eec-3194-11f1-9acb-7c1e52421244" CLIENT-IP="20.102.235.82:37905" X-SITE-DEPLOYMENT-ID="realtynest-api" WAS-DEFAULT-HOSTNAME="realtynest-api.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?type=zip&amp;async=True" X-Client-IP="20.102.235.82" X-Client-Port="37905" >
+  <step title="OneDeploy" date="2026-04-06T08:43:15.019" >
+    <step title="Starting PushDeployAsync" date="2026-04-06T08:43:15.028" /><!-- duration: 9ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/d9a5c041-48a0-4f2b-86ff-6d351f8a188c.zip" date="2026-04-06T08:43:15.047" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/d9a5c041-48a0-4f2b-86ff-6d351f8a188c.zip" date="2026-04-06T08:43:15.054" /><!-- duration: 11ms -->
+    </step><!-- duration: 164ms -->
+    <step title="Start deployment in the background" date="2026-04-06T08:43:15.226" >
+      <step title="Acquiring Deployment Lock" date="2026-04-06T08:43:15.235" /><!-- duration: 2ms -->
+      <step title="Cannot Acquire Deployment Lock already held" date="2026-04-06T08:43:15.292" /><!-- duration: 9ms -->
+    </step><!-- duration: 192ms -->
+    <step title="There is a deployment currently in progress. Please try again when it completes." date="2026-04-06T08:43:15.420" /><!-- duration: 2ms -->
+  </step><!-- duration: 404ms -->
+  <step title="Outgoing response" date="2026-04-06T08:43:15.434" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 2ms -->
+</step><!-- duration: 442ms -->

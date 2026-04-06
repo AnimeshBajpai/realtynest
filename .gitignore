@@ -42,3 +42,4 @@ server/startup.sh
 *.zip
 
 server/deploy/
+server/bundle/

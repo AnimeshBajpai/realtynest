@@ -18,12 +18,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -35,29 +33,28 @@ jobs:
         working-directory: ./server
         run: npx prisma generate
 
-      - name: Build TypeScript
+      - name: Bundle with esbuild
         working-directory: ./server
-        run: npm run build
+        run: npm run build:bundle
 
       - name: Prepare deployment package
         working-directory: ./server
         run: |
           mkdir -p deploy
-          cp -r dist/* deploy/
+          # Copy the single bundled server file
+          cp bundle/server.js deploy/
+          # Copy Prisma runtime (the only external dependency)
+          mkdir -p deploy/node_modules/@prisma
+          cp -r node_modules/@prisma/client deploy/node_modules/@prisma/
+          cp -r node_modules/.prisma deploy/node_modules/
+          # Copy prisma schema (needed for prisma client)
           cp -r prisma deploy/
-          cp package.json deploy/
-          cd deploy
-          # Override start script for Azure
-          node -e "
-            const pkg = JSON.parse(require('fs').readFileSync('package.json','utf8'));
-            pkg.scripts = { start: 'node index.js' };
-            pkg.main = 'index.js';
-            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          npm install --omit=dev --ignore-scripts --no-audit
-          npx prisma generate
-          # Cleanup caches
-          rm -rf node_modules/.cache
+          # Create minimal package.json
+          echo '{"name":"realtynest-api","type":"module","scripts":{"start":"node server.js"}}' > deploy/package.json
+          # Show deploy size
+          echo "=== Deploy package ==="
+          du -sh deploy/
+          ls -la deploy/
 
       - name: Login to Azure
         uses: azure/login@v2
