@@ -40,10 +40,20 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r dist/* deploy/
-          cp package.json deploy/
           cp -r prisma deploy/
-          cd deploy && npm install --omit=dev --ignore-scripts
-          npx prisma generate
+          # Create a deploy-specific package.json with correct start script
+          node -e "
+            const pkg = require('./package.json');
+            const deployPkg = {
+              name: pkg.name,
+              version: pkg.version,
+              type: 'module',
+              scripts: { start: 'node index.js' },
+              dependencies: { ...pkg.dependencies }
+            };
+            require('fs').writeFileSync('deploy/package.json', JSON.stringify(deployPkg, null, 2));
+          "
+          cat deploy/package.json
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -54,4 +64,7 @@ jobs:
         run: |
           cd server/deploy
           zip -qr ../../server-deploy.zip .
-          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip --restart true
+          ls -lh ../../server-deploy.zip
+          az webapp deploy --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group realtynest-rg --src-path ../../server-deploy.zip --type zip --async true
+
+
