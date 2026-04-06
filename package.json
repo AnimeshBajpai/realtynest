@@ -1,0 +1,20 @@
+{
+  "name": "realtynest",
+  "version": "1.0.0",
+  "description": "RealtyNest - Real Estate Lead Management Platform",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "client": "npm run dev --workspace=client",
+    "server": "npm run dev --workspace=server",
+    "build:client": "npm run build --workspace=client",
+    "build:server": "npm run build --workspace=server",
+    "lint": "npm run lint --workspace=client && npm run lint --workspace=server"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
