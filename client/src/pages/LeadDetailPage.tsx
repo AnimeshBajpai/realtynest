@@ -5,7 +5,6 @@ import {
   Phone,
   MapPin,
   Home,
-  Loader2,
   Pencil,
   Clock,
   User,
@@ -30,6 +29,7 @@ import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority, Lead, Communication, CommunicationType, Property } from '../types'
 import { generateWhatsAppLink } from '../lib/whatsapp'
+import BrandLoader, { ButtonLoader, PageLoader } from '../components/BrandLoader'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -108,6 +108,10 @@ export default function LeadDetailPage() {
   const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
   const [assigning, setAssigning] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [changingStatus, setChangingStatus] = useState(false)
+  const [deletingCommId, setDeletingCommId] = useState<string | null>(null)
+  const [completingId, setCompletingId] = useState<string | null>(null)
 
   // Communications state
   const [communications, setCommunications] = useState<Communication[]>([])
@@ -234,11 +238,14 @@ export default function LeadDetailPage() {
 
   const handleDeleteComm = async (commId: string) => {
     if (!id) return
+    setDeletingCommId(commId)
     try {
       await api.delete(`/leads/${id}/communications/${commId}`)
       fetchCommunications(id)
     } catch {
       // ignore
+    } finally {
+      setDeletingCommId(null)
     }
   }
 
@@ -268,11 +275,14 @@ export default function LeadDetailPage() {
   const handleCompleteFollowUp = async (commId: string) => {
     if (!id) return
     const outcome = window.prompt('Enter outcome notes (optional):')
+    setCompletingId(commId)
     try {
       await api.patch(`/leads/${id}/communications/${commId}/complete`, { outcome: outcome || undefined })
       fetchCommunications(id)
     } catch {
       // ignore
+    } finally {
+      setCompletingId(null)
     }
   }
 
@@ -308,21 +318,29 @@ export default function LeadDetailPage() {
 
   const saveEditing = async () => {
     if (!id) return
-    await updateLead(id, editForm)
-    setEditing(false)
+    setSavingEdit(true)
+    try {
+      await updateLead(id, editForm)
+      setEditing(false)
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
   const handleStatusChange = async (status: LeadStatus) => {
     if (!id) return
-    await updateLeadStatus(id, status)
-    setStatusDropdownOpen(false)
+    setChangingStatus(true)
+    try {
+      await updateLeadStatus(id, status)
+      setStatusDropdownOpen(false)
+    } finally {
+      setChangingStatus(false)
+    }
   }
 
   if (isLoading && !lead) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <PageLoader />
     )
   }
 
@@ -424,8 +442,10 @@ export default function LeadDetailPage() {
             <div className="relative">
               <button
                 onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50"
+                disabled={changingStatus}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
               >
+                {changingStatus && <ButtonLoader />}
                 Change Status
               </button>
               {statusDropdownOpen && (
@@ -606,7 +626,7 @@ export default function LeadDetailPage() {
             </div>
             {commsLoading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <BrandLoader size="md" />
               </div>
             ) : communications.length === 0 ? (
               <p className="py-6 text-center text-sm text-text-secondary">
@@ -698,19 +718,21 @@ export default function LeadDetailPage() {
                         {comm.isFollowUp && !comm.completedAt && (
                           <button
                             onClick={() => handleCompleteFollowUp(comm.id)}
-                            className="rounded p-1 text-green-600 hover:bg-green-50"
+                            disabled={completingId === comm.id}
+                            className="rounded p-1 text-green-600 hover:bg-green-50 disabled:opacity-50"
                             title="Mark Complete"
                           >
-                            <CheckCircle className="h-4 w-4" />
+                            {completingId === comm.id ? <ButtonLoader /> : <CheckCircle className="h-4 w-4" />}
                           </button>
                         )}
                         {(isAdmin || comm.userId === currentUser?.id) && (
                           <button
                             onClick={() => handleDeleteComm(comm.id)}
-                            className="rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger"
+                            disabled={deletingCommId === comm.id}
+                            className="rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger disabled:opacity-50"
                             title="Delete communication"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            {deletingCommId === comm.id ? <ButtonLoader /> : <Trash2 className="h-3.5 w-3.5" />}
                           </button>
                         )}
                       </div>
@@ -768,7 +790,7 @@ export default function LeadDetailPage() {
                         className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm font-medium text-text transition-colors hover:bg-slate-50"
                       >
                         {assigning ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <ButtonLoader />
                         ) : (
                           <UserPlus className="h-3.5 w-3.5 text-text-secondary" />
                         )}
@@ -838,7 +860,7 @@ export default function LeadDetailPage() {
             </div>
             {suggestionsLoading ? (
               <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <BrandLoader size="md" />
               </div>
             ) : suggestions.length === 0 ? (
               <p className="py-4 text-center text-sm text-text-secondary">
@@ -889,7 +911,7 @@ export default function LeadDetailPage() {
                       className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-50"
                     >
                       {linkingPropertyId === prop.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <ButtonLoader />
                       ) : (
                         <Link className="h-3 w-3" />
                       )}
@@ -1086,8 +1108,10 @@ export default function LeadDetailPage() {
                 <button
                   type="button"
                   onClick={saveEditing}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                  disabled={savingEdit}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                 >
+                  {savingEdit && <ButtonLoader />}
                   Save Changes
                 </button>
               </div>
@@ -1189,7 +1213,7 @@ export default function LeadDetailPage() {
                   disabled={commSubmitting}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                 >
-                  {commSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {commSubmitting && <ButtonLoader />}
                   Save
                 </button>
               </div>
@@ -1290,7 +1314,7 @@ export default function LeadDetailPage() {
                   disabled={commSubmitting}
                   className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
                 >
-                  {commSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {commSubmitting && <ButtonLoader />}
                   Assign Follow-Up
                 </button>
               </div>

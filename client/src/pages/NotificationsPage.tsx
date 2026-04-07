@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, CheckCheck, Loader2, Inbox, UserPlus, AlertCircle, MessageSquare, CheckCircle } from 'lucide-react'
+import { Bell, CheckCheck, Inbox, UserPlus, AlertCircle, MessageSquare, CheckCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '../lib/utils'
 import api from '../lib/api'
 import type { Notification } from '../types'
+import { ButtonLoader, PageLoader } from '../components/BrandLoader'
 
 function NotificationIcon({ type, isRead }: { type?: string; isRead: boolean }) {
   const iconClass = 'h-4 w-4'
@@ -33,6 +34,7 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [markingAll, setMarkingAll] = useState(false)
+  const [markingId, setMarkingId] = useState<string | null>(null)
 
   const fetchNotifications = useCallback(async (p: number) => {
     setLoading(true)
@@ -53,11 +55,14 @@ export default function NotificationsPage() {
   }, [page, fetchNotifications])
 
   const markAsRead = async (id: string, link?: string) => {
+    setMarkingId(id)
     try {
       await api.patch(`/notifications/${id}/read`)
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)))
     } catch {
       // silent
+    } finally {
+      setMarkingId(null)
     }
     if (link) navigate(link)
   }
@@ -89,16 +94,14 @@ export default function NotificationsPage() {
             disabled={markingAll}
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-text shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
           >
-            {markingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
+            {markingAll ? <ButtonLoader /> : <CheckCheck className="h-4 w-4" />}
             Mark All Read
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <PageLoader />
       ) : error ? (
         <div className="py-12 text-center text-danger">{error}</div>
       ) : notifications.length === 0 ? (
@@ -128,6 +131,7 @@ export default function NotificationsPage() {
                   <p className="mt-1.5 text-xs text-text-muted">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
                 </div>
                 {!n.isRead && <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-500 ring-2 ring-white" />}
+                {markingId === n.id && <ButtonLoader />}
               </div>
             ))}
           </div>

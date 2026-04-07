@@ -506,7 +506,11 @@ export const leadService = {
     }
 
     if (lead.propertyTypePreference) {
-      orConditions.push({ type: lead.propertyTypePreference as any });
+      const normalised = lead.propertyTypePreference.toUpperCase();
+      const validTypes = ['APARTMENT', 'VILLA', 'PLOT', 'COMMERCIAL'];
+      if (validTypes.includes(normalised)) {
+        orConditions.push({ type: normalised as any });
+      }
     }
 
     if (orConditions.length === 0) return [];

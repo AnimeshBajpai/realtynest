@@ -5,7 +5,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Users,
   X,
   CheckSquare,
@@ -22,6 +21,7 @@ import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority } from '../types'
 import CreateLeadModal from '../components/CreateLeadModal'
 import { generateWhatsAppLinkFromRow } from '../lib/whatsapp'
+import { ButtonLoader, PageLoader } from '../components/BrandLoader'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -89,6 +89,7 @@ export default function LeadsPage() {
   const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'AGENCY_ADMIN'
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
   const { assignLead } = useLeadStore()
+  const [assigningLeadId, setAssigningLeadId] = useState<string | null>(null)
 
   // Bulk selection state
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
@@ -105,8 +106,13 @@ export default function LeadsPage() {
   }, [isAdmin])
 
   const handleAssign = async (leadId: string, userId: string) => {
-    await assignLead(leadId, userId)
-    fetchLeads()
+    setAssigningLeadId(leadId)
+    try {
+      await assignLead(leadId, userId)
+      fetchLeads()
+    } finally {
+      setAssigningLeadId(null)
+    }
   }
 
   // Clear selection when leads change (page change, filter change, etc.)
@@ -316,7 +322,7 @@ export default function LeadsPage() {
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <PageLoader />
           </div>
         ) : leads.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
@@ -418,6 +424,9 @@ export default function LeadsPage() {
                   <td className="hidden px-4 py-3.5 xl:table-cell" onClick={(e) => e.stopPropagation()}>
                     {isAdmin ? (
                       <div className="relative">
+                        {assigningLeadId === lead.id ? (
+                          <div className="flex items-center justify-center py-1"><ButtonLoader /></div>
+                        ) : (
                         <select
                           value={lead.assignedToId ?? ''}
                           onChange={(e) => {
@@ -437,6 +446,7 @@ export default function LeadsPage() {
                             </option>
                           ))}
                         </select>
+                        )}
                       </div>
                     ) : (
                       <span className="text-text-secondary">
@@ -590,7 +600,7 @@ export default function LeadsPage() {
               Clear
             </button>
 
-            {bulkLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            {bulkLoading && <ButtonLoader />}
           </div>
         </div>
       )}

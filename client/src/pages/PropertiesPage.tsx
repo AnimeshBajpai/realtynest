@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus,
   Search,
-  Loader2,
   Building2,
   MapPin,
   BedDouble,
@@ -16,6 +15,7 @@ import { cn } from '../lib/utils'
 import { usePropertyStore, type PropertyFilters } from '../store/propertyStore'
 import type { PropertyType, PropertyStatus } from '../types'
 import CreatePropertyModal from '../components/CreatePropertyModal'
+import { PageLoader } from '../components/BrandLoader'
 
 const TYPE_OPTIONS: { value: PropertyType | ''; label: string }[] = [
   { value: '', label: 'All Types' },
@@ -200,7 +200,7 @@ export default function PropertiesPage() {
       {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <PageLoader />
         </div>
       ) : properties.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white py-20 text-center shadow-sm">

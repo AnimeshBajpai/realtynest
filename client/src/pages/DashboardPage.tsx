@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Users, UserCheck, TrendingUp, BarChart3, Loader2, ArrowRight,
+  Users, UserCheck, TrendingUp, BarChart3, ArrowRight,
   Phone, Calendar, Mail, MessageSquare, FileText, Building2, Activity,
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -16,6 +16,7 @@ import type {
   LeadStatus, LeadPriority, CommunicationType, Lead,
   BrokerDashboard, AgencyDashboard, SuperAdminDashboard, LeadActivity,
 } from '../types'
+import BrandLoader, { PageLoader } from '../components/BrandLoader'
 
 const CHART_COLORS = ['#4f46e5', '#f59e0b', '#8b5cf6', '#6366f1', '#f97316', '#10b981', '#f43f5e']
 
@@ -83,7 +84,7 @@ function FollowUpsList({ followUps, loading, navigate }: {
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <BrandLoader size="md" />
           </div>
         ) : followUps.length === 0 ? (
           <div className="py-12 text-center text-sm text-text-secondary">No upcoming follow-ups</div>
@@ -130,7 +131,7 @@ function RecentLeadsTable({ leads, loading, navigate }: { leads: Lead[]; loading
       </div>
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+          <div className="flex items-center justify-center py-12"><BrandLoader size="md" /></div>
         ) : leads.length === 0 ? (
           <div className="py-12 text-center text-sm text-text-secondary">No leads yet.</div>
         ) : (
@@ -188,7 +189,7 @@ function BrokerDash() {
     load()
   }, [])
 
-  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (loading) return <PageLoader />
   if (error) return <div className="py-12 text-center text-danger">{error}</div>
   if (!data) return null
 
@@ -287,7 +288,7 @@ function AgencyAdminDash() {
     load()
   }, [])
 
-  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (loading) return <PageLoader />
   if (error) return <div className="py-12 text-center text-danger">{error}</div>
   if (!data) return null
 
@@ -398,7 +399,7 @@ function SuperAdminDash() {
     load()
   }, [])
 
-  if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (loading) return <PageLoader />
   if (error) return <div className="py-12 text-center text-danger">{error}</div>
   if (!data) return null
 

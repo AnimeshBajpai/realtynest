@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Loader2,
   Pencil,
   Trash2,
   MapPin,
@@ -15,6 +14,7 @@ import {
   Link2,
   Unlink,
 } from 'lucide-react'
+import { ButtonLoader, PageLoader } from '../components/BrandLoader'
 import { format } from 'date-fns'
 import { cn } from '../lib/utils'
 import { usePropertyStore } from '../store/propertyStore'
@@ -100,8 +100,12 @@ export default function PropertyDetailPage() {
 
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Property>>({})
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [linkModalOpen, setLinkModalOpen] = useState(false)
+  const [linking, setLinking] = useState(false)
+  const [unlinkingId, setUnlinkingId] = useState<string | null>(null)
   const [linkForm, setLinkForm] = useState({ leadId: '', interestLevel: 'MEDIUM' as InterestLevel, notes: '' })
   const [availableLeads, setAvailableLeads] = useState<{ id: string; firstName: string; lastName: string }[]>([])
 
@@ -136,14 +140,24 @@ export default function PropertyDetailPage() {
 
   const saveEditing = async () => {
     if (!id) return
-    await updateProperty(id, editForm)
-    setEditing(false)
+    setSavingEdit(true)
+    try {
+      await updateProperty(id, editForm)
+      setEditing(false)
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
   const handleDelete = async () => {
     if (!id) return
-    await deleteProperty(id)
-    navigate('/properties')
+    setDeleting(true)
+    try {
+      await deleteProperty(id)
+      navigate('/properties')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const openLinkModal = async () => {
@@ -165,25 +179,31 @@ export default function PropertyDetailPage() {
 
   const handleLink = async () => {
     if (!id || !linkForm.leadId) return
-    await linkLead(id, {
-      leadId: linkForm.leadId,
-      interestLevel: linkForm.interestLevel,
-      notes: linkForm.notes || undefined,
-    })
-    setLinkModalOpen(false)
+    setLinking(true)
+    try {
+      await linkLead(id, {
+        leadId: linkForm.leadId,
+        interestLevel: linkForm.interestLevel,
+        notes: linkForm.notes || undefined,
+      })
+      setLinkModalOpen(false)
+    } finally {
+      setLinking(false)
+    }
   }
 
   const handleUnlink = async (leadId: string) => {
     if (!id) return
-    await unlinkLead(id, leadId)
+    setUnlinkingId(leadId)
+    try {
+      await unlinkLead(id, leadId)
+    } finally {
+      setUnlinkingId(null)
+    }
   }
 
   if (isLoading && !property) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (error && !property) {
@@ -383,10 +403,11 @@ export default function PropertyDetailPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleUnlink(lp.leadId)}
-                        className="rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger"
+                        disabled={unlinkingId === lp.leadId}
+                        className="rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger disabled:opacity-50"
                         title="Unlink lead"
                       >
-                        <Unlink className="h-4 w-4" />
+                        {unlinkingId === lp.leadId ? <ButtonLoader /> : <Unlink className="h-4 w-4" />}
                       </button>
                     </td>
                   </tr>
@@ -463,10 +484,10 @@ export default function PropertyDetailPage() {
                 <button
                   type="button"
                   onClick={handleLink}
-                  disabled={!linkForm.leadId}
+                  disabled={!linkForm.leadId || linking}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                 >
-                  <Plus className="h-4 w-4" />
+                  {linking ? <ButtonLoader /> : <Plus className="h-4 w-4" />}
                   Link Lead
                 </button>
               </div>
@@ -654,8 +675,10 @@ export default function PropertyDetailPage() {
                 <button
                   type="button"
                   onClick={saveEditing}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                  disabled={savingEdit}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                 >
+                  {savingEdit && <ButtonLoader />}
                   Save Changes
                 </button>
               </div>
@@ -682,8 +705,10 @@ export default function PropertyDetailPage() {
               </button>
               <button
                 onClick={handleDelete}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={deleting}
+                className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
+                {deleting && <ButtonLoader />}
                 Delete
               </button>
             </div>

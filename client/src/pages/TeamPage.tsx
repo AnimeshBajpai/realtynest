@@ -7,7 +7,6 @@ import {
   ToggleLeft,
   ToggleRight,
   X,
-  Loader2,
   Users,
   Key,
   Copy,
@@ -16,6 +15,7 @@ import {
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { User } from '../types'
+import { ButtonLoader, PageLoader } from '../components/BrandLoader'
 
 interface BrokerForm {
   firstName: string
@@ -185,7 +185,7 @@ export default function TeamPage() {
 
       {loading ? (
         <div className="mt-12 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <PageLoader />
         </div>
       ) : brokers.length === 0 ? (
         <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-12 shadow-sm">
@@ -240,7 +240,7 @@ export default function TeamPage() {
                     title={broker.isActive ? 'Deactivate' : 'Activate'}
                   >
                     {togglingId === broker.id ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <ButtonLoader />
                     ) : broker.isActive ? (
                       <ToggleRight className="h-5 w-5 text-success" />
                     ) : (
@@ -382,7 +382,7 @@ export default function TeamPage() {
                   disabled={submitting}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
                 >
-                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting && <ButtonLoader />}
                   {submitting ? 'Adding…' : 'Add Broker'}
                 </button>
               </div>
@@ -423,7 +423,7 @@ export default function TeamPage() {
                 disabled={resettingPassword}
                 className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
               >
-                {resettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resettingPassword && <ButtonLoader />}
                 {resettingPassword ? 'Resetting…' : 'Reset Password'}
               </button>
             </div>

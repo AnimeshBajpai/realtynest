@@ -1,7 +1,8 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
-import { Building2, Loader2, User, Lock } from 'lucide-react'
+import { Building2, User, Lock } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { ButtonLoader } from '../components/BrandLoader'
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('')
@@ -107,7 +108,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 transition-all duration-200 hover:from-indigo-700 hover:to-indigo-600 disabled:opacity-60"
             >
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isLoading && <ButtonLoader />}
               {isLoading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>

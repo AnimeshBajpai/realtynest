@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { X, Loader2, Plus, Building2, Key, Copy, Check } from 'lucide-react'
+import { X, Plus, Building2, Key, Copy, Check } from 'lucide-react'
 import { cn } from '../lib/utils'
 import api from '../lib/api'
+import { ButtonLoader, PageLoader } from '../components/BrandLoader'
 
 interface AdminUser {
   id: string
@@ -170,7 +171,7 @@ export default function AdminAgenciesPage() {
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <PageLoader />
           </div>
         ) : agencies.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -369,7 +370,7 @@ export default function AdminAgenciesPage() {
                   disabled={submitting}
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                 >
-                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {submitting && <ButtonLoader />}
                   Create Agency
                 </button>
               </div>
@@ -410,7 +411,7 @@ export default function AdminAgenciesPage() {
                 disabled={resettingPassword}
                 className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
               >
-                {resettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resettingPassword && <ButtonLoader />}
                 {resettingPassword ? 'Resetting…' : 'Reset Password'}
               </button>
             </div>

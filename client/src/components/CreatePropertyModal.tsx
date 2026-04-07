@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { X } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { usePropertyStore } from '../store/propertyStore'
 import type { PropertyType, PropertyStatus } from '../types'
+import { ButtonLoader } from './BrandLoader'
 
 interface Props {
   open: boolean
@@ -290,7 +291,7 @@ export default function CreatePropertyModal({ open, onClose }: Props) {
               disabled={submitting}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
             >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting && <ButtonLoader />}
               Create Property
             </button>
           </div>

@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Bell,
   CheckCircle,
-  Loader2,
   Clock,
   Filter,
   ChevronLeft,
@@ -19,6 +18,7 @@ import { cn } from '../lib/utils'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { User } from '../types'
+import { PageLoader } from '../components/BrandLoader'
 
 interface ActivityLead {
   id: string
@@ -253,7 +253,7 @@ export default function ActivityPage() {
       {/* Activity Feed */}
       {loading ? (
         <div className="mt-12 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <PageLoader />
         </div>
       ) : activities.length === 0 ? (
         <div className="mt-8 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-12 shadow-sm">
