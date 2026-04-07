@@ -13,6 +13,7 @@ import TeamPage from './pages/TeamPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
 import AdminAgenciesPage from './pages/AdminAgenciesPage'
+import HomePage from './pages/HomePage'
 import { useAuthStore } from './store/authStore'
 import { Loader2 } from 'lucide-react'
 
@@ -55,8 +56,8 @@ function AppWrapper() {
         </Route>
       </Route>
 
-      {/* Redirect root to dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Public landing page */}
+      <Route path="/" element={<HomePage />} />
     </Routes>
   )
 }
