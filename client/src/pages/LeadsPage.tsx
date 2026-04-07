@@ -530,66 +530,68 @@ export default function LeadsPage() {
 
       {/* Floating Bulk Action Bar */}
       {isAdmin && selectedLeads.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3 shadow-2xl">
-          <span className="text-sm font-semibold text-text whitespace-nowrap">
-            {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''} selected
-          </span>
+        <div className="fixed bottom-4 left-2 right-2 z-40 mx-auto max-w-xl overflow-x-auto rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2">
+          <div className="flex items-center gap-3 min-w-max">
+            <span className="text-sm font-semibold text-text whitespace-nowrap">
+              {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''} selected
+            </span>
 
-          <div className="h-5 w-px bg-slate-200" />
+            <div className="h-5 w-px bg-slate-200" />
 
-          <select
-            disabled={bulkLoading}
-            defaultValue=""
-            onChange={(e) => {
-              handleBulkAssign(e.target.value)
-              e.target.value = ''
-            }}
-            className={cn(selectClass, 'text-xs py-1.5')}
-          >
-            <option value="" disabled>Assign To</option>
-            {teamMembers.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.firstName} {m.lastName}
-              </option>
-            ))}
-          </select>
+            <select
+              disabled={bulkLoading}
+              defaultValue=""
+              onChange={(e) => {
+                handleBulkAssign(e.target.value)
+                e.target.value = ''
+              }}
+              className={cn(selectClass, 'text-xs py-1.5')}
+            >
+              <option value="" disabled>Assign To</option>
+              {teamMembers.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.firstName} {m.lastName}
+                </option>
+              ))}
+            </select>
 
-          <select
-            disabled={bulkLoading}
-            defaultValue=""
-            onChange={(e) => {
-              handleBulkStatus(e.target.value)
-              e.target.value = ''
-            }}
-            className={cn(selectClass, 'text-xs py-1.5')}
-          >
-            <option value="" disabled>Change Status</option>
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            <select
+              disabled={bulkLoading}
+              defaultValue=""
+              onChange={(e) => {
+                handleBulkStatus(e.target.value)
+                e.target.value = ''
+              }}
+              className={cn(selectClass, 'text-xs py-1.5')}
+            >
+              <option value="" disabled>Change Status</option>
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
 
-          <button
-            disabled={bulkLoading}
-            onClick={handleBulkDelete}
-            className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
-          </button>
+            <button
+              disabled={bulkLoading}
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 whitespace-nowrap"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </button>
 
-          <button
-            disabled={bulkLoading}
-            onClick={clearSelection}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-slate-50"
-          >
-            <X className="h-3.5 w-3.5" />
-            Clear
-          </button>
+            <button
+              disabled={bulkLoading}
+              onClick={clearSelection}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-slate-50 whitespace-nowrap"
+            >
+              <X className="h-3.5 w-3.5" />
+              Clear
+            </button>
 
-          {bulkLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+            {bulkLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          </div>
         </div>
       )}
     </div>
