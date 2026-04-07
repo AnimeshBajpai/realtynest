@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Loader2,
   Users,
-  User,
   X,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -83,8 +82,6 @@ export default function LeadsPage() {
   const currentUser = useAuthStore((s) => s.user)
   const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'AGENCY_ADMIN'
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
-  const [assignOpenId, setAssignOpenId] = useState<string | null>(null)
-  const assignRef = useRef<HTMLDivElement>(null)
   const { assignLead } = useLeadStore()
 
   useEffect(() => {
@@ -96,17 +93,8 @@ export default function LeadsPage() {
     }
   }, [isAdmin])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (assignRef.current && !assignRef.current.contains(e.target as Node)) setAssignOpenId(null)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
   const handleAssign = async (leadId: string, userId: string) => {
     await assignLead(leadId, userId)
-    setAssignOpenId(null)
     fetchLeads()
   }
 
@@ -304,36 +292,26 @@ export default function LeadsPage() {
                   </td>
                   <td className="hidden px-4 py-3.5 xl:table-cell" onClick={(e) => e.stopPropagation()}>
                     {isAdmin ? (
-                      <div className="relative" ref={assignOpenId === lead.id ? assignRef : undefined}>
-                        <button
-                          onClick={() => setAssignOpenId(assignOpenId === lead.id ? null : lead.id)}
-                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-text transition-colors hover:bg-slate-50"
+                      <div className="relative">
+                        <select
+                          value={lead.assignedToId ?? ''}
+                          onChange={(e) => {
+                            if (e.target.value) handleAssign(lead.id, e.target.value)
+                          }}
+                          className={cn(
+                            'w-full max-w-[160px] cursor-pointer rounded-lg border px-2 py-1 text-xs font-medium transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20',
+                            lead.assignedTo
+                              ? 'border-slate-200 bg-white text-text'
+                              : 'border-amber-200 bg-amber-50 text-amber-700'
+                          )}
                         >
-                          <User className="h-3 w-3 text-slate-400" />
-                          {lead.assignedTo
-                            ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
-                            : 'Assign'}
-                        </button>
-                        {assignOpenId === lead.id && (
-                          <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
-                            <div className="max-h-48 overflow-y-auto py-1">
-                              {teamMembers.map((m) => (
-                                <button
-                                  key={m.id}
-                                  onClick={() => handleAssign(lead.id, m.id)}
-                                  className={cn(
-                                    'flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-slate-50',
-                                    m.id === lead.assignedToId && 'bg-indigo-50 font-medium text-indigo-700'
-                                  )}
-                                >
-                                  <User className="h-3 w-3 shrink-0 text-slate-400" />
-                                  <span className="truncate">{m.firstName} {m.lastName}</span>
-                                  <span className="ml-auto text-[10px] text-text-secondary">{m.role === 'AGENCY_ADMIN' ? 'Admin' : 'Broker'}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          <option value="">— Assign —</option>
+                          {teamMembers.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.firstName} {m.lastName} {m.role === 'AGENCY_ADMIN' ? '(Admin)' : ''}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     ) : (
                       <span className="text-text-secondary">

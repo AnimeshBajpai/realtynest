@@ -7,8 +7,8 @@ export const createCommunicationSchema = z.object({
   subject: z.string().optional(),
   body: z.string().optional(),
   outcome: z.string().optional(),
-  scheduledAt: z.string().datetime({ offset: true }).optional().nullable(),
-  completedAt: z.string().datetime({ offset: true }).optional().nullable(),
+  scheduledAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
+  completedAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
 });
 
 export const updateCommunicationSchema = z.object({
@@ -16,8 +16,8 @@ export const updateCommunicationSchema = z.object({
   subject: z.string().optional().nullable(),
   body: z.string().optional().nullable(),
   outcome: z.string().optional().nullable(),
-  scheduledAt: z.string().datetime({ offset: true }).optional().nullable(),
-  completedAt: z.string().datetime({ offset: true }).optional().nullable(),
+  scheduledAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
+  completedAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
 });
 
 export const communicationQuerySchema = z.object({
