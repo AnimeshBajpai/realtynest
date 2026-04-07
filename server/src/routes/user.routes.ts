@@ -6,13 +6,13 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.post('/', authorizeRoles('AGENCY_ADMIN'), userController.createBroker);
+router.post('/', authorizeRoles('AGENCY_ADMIN', 'SUPER_ADMIN'), userController.createBroker);
 router.get('/', userController.listBrokers);
 router.get('/:id', userController.getBroker);
 router.put('/:id', userController.updateProfile);
 router.patch(
   '/:id/status',
-  authorizeRoles('AGENCY_ADMIN'),
+  authorizeRoles('AGENCY_ADMIN', 'SUPER_ADMIN'),
   userController.toggleStatus,
 );
 router.post(
