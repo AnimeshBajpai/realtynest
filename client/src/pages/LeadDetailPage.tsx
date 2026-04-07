@@ -15,17 +15,21 @@ import {
   Plus,
   Calendar,
   MessageSquare,
+  MessageCircle,
   FileText,
   Trash2,
   Bell,
   CheckCircle,
+  Building2,
+  Link,
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '../lib/utils'
 import { useLeadStore } from '../store/leadStore'
 import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
-import type { LeadStatus, LeadSource, LeadPriority, Lead, Communication, CommunicationType } from '../types'
+import type { LeadStatus, LeadSource, LeadPriority, Lead, Communication, CommunicationType, Property } from '../types'
+import { generateWhatsAppLink } from '../lib/whatsapp'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -129,6 +133,41 @@ export default function LeadDetailPage() {
 
   const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'AGENCY_ADMIN'
 
+  // Property suggestions state
+  interface PropertySuggestion {
+    property: Property
+    matchScore: number
+    matches: { budget: boolean; location: boolean; type: boolean }
+  }
+  const [suggestions, setSuggestions] = useState<PropertySuggestion[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [linkingPropertyId, setLinkingPropertyId] = useState<string | null>(null)
+
+  const fetchSuggestions = async (leadId: string) => {
+    setSuggestionsLoading(true)
+    try {
+      const { data } = await api.get(`/leads/${leadId}/property-suggestions`)
+      setSuggestions(data.suggestions ?? [])
+    } catch {
+      setSuggestions([])
+    } finally {
+      setSuggestionsLoading(false)
+    }
+  }
+
+  const handleLinkProperty = async (propertyId: string) => {
+    if (!id) return
+    setLinkingPropertyId(propertyId)
+    try {
+      await api.post(`/properties/${propertyId}/leads`, { leadId: id, interestLevel: 'MEDIUM' })
+      fetchSuggestions(id)
+    } catch {
+      // ignore
+    } finally {
+      setLinkingPropertyId(null)
+    }
+  }
+
   const fetchCommunications = async (leadId: string) => {
     setCommsLoading(true)
     try {
@@ -146,6 +185,7 @@ export default function LeadDetailPage() {
       fetchLead(id)
       fetchTimeline(id)
       fetchCommunications(id)
+      fetchSuggestions(id)
     }
     if (isAdmin) {
       api.get('/users').then(({ data }) => {
@@ -369,6 +409,16 @@ export default function LeadDetailPage() {
             >
               <Pencil className="h-3.5 w-3.5" />
               Edit
+            </button>
+            <button
+              onClick={() => {
+                const url = generateWhatsAppLink(lead, currentUser?.agency?.name ?? 'RealtyNest')
+                window.open(url, '_blank')
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-green-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-green-600"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Share on WhatsApp
             </button>
             {/* Status dropdown */}
             <div className="relative">
@@ -778,6 +828,77 @@ export default function LeadDetailPage() {
                 </dd>
               </div>
             </dl>
+          </div>
+
+          {/* Suggested Properties */}
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-indigo-500" />
+              <h3 className="text-sm font-semibold text-text">Suggested Properties</h3>
+            </div>
+            {suggestionsLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              </div>
+            ) : suggestions.length === 0 ? (
+              <p className="py-4 text-center text-sm text-text-secondary">
+                No matching properties found
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {suggestions.map(({ property: prop, matches }) => (
+                  <div
+                    key={prop.id}
+                    className="rounded-lg border border-slate-200 p-3 transition-shadow hover:shadow-sm"
+                  >
+                    <p className="text-sm font-medium text-text truncate">{prop.name}</p>
+                    {prop.price != null && (
+                      <p className="mt-0.5 text-xs font-medium text-emerald-700">
+                        {prop.price.toLocaleString('en-IN', {
+                          style: 'currency',
+                          currency: 'INR',
+                          maximumFractionDigits: 0,
+                        })}
+                      </p>
+                    )}
+                    {(prop.city || prop.state) && (
+                      <p className="mt-0.5 text-xs text-text-secondary">
+                        {[prop.city, prop.state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {matches.budget && (
+                        <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                          Budget ✓
+                        </span>
+                      )}
+                      {matches.location && (
+                        <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                          Location ✓
+                        </span>
+                      )}
+                      {matches.type && (
+                        <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                          Type ✓
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleLinkProperty(prop.id)}
+                      disabled={linkingPropertyId === prop.id}
+                      className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-text transition-colors hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {linkingPropertyId === prop.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Link className="h-3 w-3" />
+                      )}
+                      Link to Lead
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

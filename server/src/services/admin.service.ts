@@ -79,9 +79,15 @@ export const adminService = {
     // multiple filtered _count on the same relation in one query
     const agenciesWithCounts = await Promise.all(
       agencies.map(async (agency) => {
-        const brokerCount = await prisma.user.count({
-          where: { agencyId: agency.id, role: 'BROKER' },
-        });
+        const [brokerCount, adminUser] = await Promise.all([
+          prisma.user.count({
+            where: { agencyId: agency.id, role: 'BROKER' },
+          }),
+          prisma.user.findFirst({
+            where: { agencyId: agency.id, role: 'AGENCY_ADMIN' },
+            select: { id: true, firstName: true, lastName: true, email: true },
+          }),
+        ]);
 
         return {
           id: agency.id,
@@ -93,6 +99,7 @@ export const adminService = {
           createdAt: agency.createdAt,
           adminCount: agency._count.users,
           brokerCount,
+          adminUser,
         };
       }),
     );

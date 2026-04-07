@@ -12,6 +12,7 @@ import PropertyDetailPage from './pages/PropertyDetailPage'
 import TeamPage from './pages/TeamPage'
 import SettingsPage from './pages/SettingsPage'
 import NotificationsPage from './pages/NotificationsPage'
+import ActivityPage from './pages/ActivityPage'
 import AdminAgenciesPage from './pages/AdminAgenciesPage'
 import HomePage from './pages/HomePage'
 import { useAuthStore } from './store/authStore'
@@ -50,6 +51,7 @@ function AppWrapper() {
           <Route path="/properties" element={<PropertiesPage />} />
           <Route path="/properties/:id" element={<PropertyDetailPage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/admin/agencies" element={<AdminAgenciesPage />} />

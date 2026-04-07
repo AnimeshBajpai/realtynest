@@ -15,5 +15,10 @@ router.patch(
   authorizeRoles('AGENCY_ADMIN'),
   userController.toggleStatus,
 );
+router.post(
+  '/:id/reset-password',
+  authorizeRoles('AGENCY_ADMIN', 'SUPER_ADMIN'),
+  userController.resetPassword,
+);
 
 export default router;

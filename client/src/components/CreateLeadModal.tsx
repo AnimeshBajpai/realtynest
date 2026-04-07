@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, AlertTriangle } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useLeadStore } from '../store/leadStore'
+import api from '../lib/api'
 import type { LeadSource, LeadPriority } from '../types'
 
 interface Props {
@@ -48,6 +49,7 @@ export default function CreateLeadModal({ open, onClose }: Props) {
   })
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null)
 
   if (!open) return null
 
@@ -59,6 +61,30 @@ export default function CreateLeadModal({ open, onClose }: Props) {
       return next
     })
   }
+
+  const checkDuplicate = async (field: 'phone' | 'email', value: string) => {
+    if (!value.trim()) return
+    try {
+      const { data } = await api.post('/leads/check-duplicate', { [field]: value.trim() })
+      const dupes = data.duplicates ?? []
+      if (dupes.length > 0) {
+        const d = dupes[0]
+        const name = `${d.firstName} ${d.lastName}`
+        setDuplicateWarning(
+          JSON.stringify({ field, name, id: d.id, status: d.status })
+        )
+      } else {
+        setDuplicateWarning(null)
+      }
+    } catch {
+      // ignore errors — non-blocking
+    }
+  }
+
+  const parsedWarning = duplicateWarning ? (() => {
+    try { return JSON.parse(duplicateWarning) as { field: string; name: string; id: string; status: string } }
+    catch { return null }
+  })() : null
 
   const validate = () => {
     const errors: Record<string, string> = {}
@@ -121,6 +147,22 @@ export default function CreateLeadModal({ open, onClose }: Props) {
             </div>
           )}
 
+          {parsedWarning && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+              <span>
+                A lead with this {parsedWarning.field} already exists:{' '}
+                <a
+                  href={`/leads/${parsedWarning.id}`}
+                  className="font-medium text-amber-900 underline hover:text-amber-700"
+                >
+                  {parsedWarning.name}
+                </a>{' '}
+                ({parsedWarning.status})
+              </span>
+            </div>
+          )}
+
           {/* Name row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -163,6 +205,7 @@ export default function CreateLeadModal({ open, onClose }: Props) {
                 type="email"
                 value={form.email}
                 onChange={(e) => set('email', e.target.value)}
+                onBlur={() => checkDuplicate('email', form.email)}
                 className={cn(inputClass, validationErrors.email && 'border-danger')}
                 placeholder="john@example.com"
               />
@@ -176,6 +219,7 @@ export default function CreateLeadModal({ open, onClose }: Props) {
                 type="tel"
                 value={form.phone}
                 onChange={(e) => set('phone', e.target.value)}
+                onBlur={() => checkDuplicate('phone', form.phone)}
                 className={inputClass}
                 placeholder="+1 234 567 890"
               />

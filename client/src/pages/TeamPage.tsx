@@ -9,6 +9,9 @@ import {
   X,
   Loader2,
   Users,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react'
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -39,6 +42,10 @@ export default function TeamPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [resetConfirmBroker, setResetConfirmBroker] = useState<User | null>(null)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState<string | null>(null)
+  const [passwordCopied, setPasswordCopied] = useState(false)
 
   const isAdmin = user?.role === 'AGENCY_ADMIN' || user?.role === 'SUPER_ADMIN'
 
@@ -100,6 +107,31 @@ export default function TeamPage() {
     } finally {
       setTogglingId(null)
     }
+  }
+
+  const handleResetPassword = async () => {
+    if (!resetConfirmBroker) return
+    setResettingPassword(true)
+    try {
+      const { data } = await api.post<{ password: string }>(
+        `/users/${resetConfirmBroker.id}/reset-password`
+      )
+      setResetConfirmBroker(null)
+      setNewPassword(data.password)
+      setPasswordCopied(false)
+    } catch {
+      setError('Failed to reset password')
+      setResetConfirmBroker(null)
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
+  const copyPassword = async () => {
+    if (!newPassword) return
+    await navigator.clipboard.writeText(newPassword)
+    setPasswordCopied(true)
+    setTimeout(() => setPasswordCopied(false), 2000)
   }
 
   const update =
@@ -193,20 +225,29 @@ export default function TeamPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleBrokerStatus(broker)}
-                  disabled={togglingId === broker.id}
-                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
-                  title={broker.isActive ? 'Deactivate' : 'Activate'}
-                >
-                  {togglingId === broker.id ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : broker.isActive ? (
-                    <ToggleRight className="h-5 w-5 text-success" />
-                  ) : (
-                    <ToggleLeft className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setResetConfirmBroker(broker)}
+                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    title="Reset Password"
+                  >
+                    <Key className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => toggleBrokerStatus(broker)}
+                    disabled={togglingId === broker.id}
+                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+                    title={broker.isActive ? 'Deactivate' : 'Activate'}
+                  >
+                    {togglingId === broker.id ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : broker.isActive ? (
+                      <ToggleRight className="h-5 w-5 text-success" />
+                    ) : (
+                      <ToggleLeft className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 space-y-2 text-sm text-text-secondary">
@@ -346,6 +387,88 @@ export default function TeamPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Confirmation Modal */}
+      {resetConfirmBroker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text">Reset Password</h2>
+              <button
+                onClick={() => setResetConfirmBroker(null)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-text-secondary">
+              Are you sure you want to reset the password for{' '}
+              <span className="font-medium text-text">
+                {resetConfirmBroker.firstName} {resetConfirmBroker.lastName}
+              </span>
+              ? A new random password will be generated.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setResetConfirmBroker(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resettingPassword}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
+              >
+                {resettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resettingPassword ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Password Modal */}
+      {newPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text">New Password</h2>
+              <button
+                onClick={() => setNewPassword(null)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-text-secondary">
+              The password has been reset. Share this new password with the user securely.
+            </p>
+            <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <code className="flex-1 text-sm font-medium text-text">{newPassword}</code>
+              <button
+                onClick={copyPassword}
+                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600"
+                title="Copy to clipboard"
+              >
+                {passwordCopied ? (
+                  <Check className="h-4 w-4 text-success" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setNewPassword(null)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

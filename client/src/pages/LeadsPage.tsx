@@ -8,6 +8,11 @@ import {
   Loader2,
   Users,
   X,
+  CheckSquare,
+  Square,
+  Trash2,
+  Minus,
+  MessageCircle,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '../lib/utils'
@@ -16,6 +21,7 @@ import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority } from '../types'
 import CreateLeadModal from '../components/CreateLeadModal'
+import { generateWhatsAppLinkFromRow } from '../lib/whatsapp'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -84,6 +90,11 @@ export default function LeadsPage() {
   const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
   const { assignLead } = useLeadStore()
 
+  // Bulk selection state
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
+  const [selectAll, setSelectAll] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+
   useEffect(() => {
     if (isAdmin) {
       api.get('/users').then(({ data }) => {
@@ -96,6 +107,90 @@ export default function LeadsPage() {
   const handleAssign = async (leadId: string, userId: string) => {
     await assignLead(leadId, userId)
     fetchLeads()
+  }
+
+  // Clear selection when leads change (page change, filter change, etc.)
+  useEffect(() => {
+    setSelectedLeads(new Set())
+    setSelectAll(false)
+  }, [leads])
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedLeads(new Set())
+      setSelectAll(false)
+    } else {
+      setSelectedLeads(new Set(leads.map((l) => l.id)))
+      setSelectAll(true)
+    }
+  }
+
+  const toggleSelectLead = (leadId: string) => {
+    setSelectedLeads((prev) => {
+      const next = new Set(prev)
+      if (next.has(leadId)) {
+        next.delete(leadId)
+      } else {
+        next.add(leadId)
+      }
+      return next
+    })
+  }
+
+  const clearSelection = () => {
+    setSelectedLeads(new Set())
+    setSelectAll(false)
+  }
+
+  const handleBulkAssign = async (assignedToId: string) => {
+    if (!assignedToId || selectedLeads.size === 0) return
+    setBulkLoading(true)
+    try {
+      await api.post('/leads/bulk/assign', {
+        leadIds: Array.from(selectedLeads),
+        assignedToId,
+      })
+      clearSelection()
+      fetchLeads()
+    } catch {
+      // error handled by interceptor
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const handleBulkStatus = async (status: string) => {
+    if (!status || selectedLeads.size === 0) return
+    setBulkLoading(true)
+    try {
+      await api.post('/leads/bulk/status', {
+        leadIds: Array.from(selectedLeads),
+        status,
+      })
+      clearSelection()
+      fetchLeads()
+    } catch {
+      // error handled by interceptor
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedLeads.size === 0) return
+    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.size} lead(s)? This action cannot be undone.`)) return
+    setBulkLoading(true)
+    try {
+      await api.post('/leads/bulk/delete', {
+        leadIds: Array.from(selectedLeads),
+      })
+      clearSelection()
+      fetchLeads()
+    } catch {
+      // error handled by interceptor
+    } finally {
+      setBulkLoading(false)
+    }
   }
 
   const load = useCallback(() => {
@@ -130,7 +225,7 @@ export default function LeadsPage() {
     SOURCE_OPTIONS.find((o) => o.value === s)?.label ?? s
 
   return (
-    <div>
+    <div className={selectedLeads.size > 0 ? 'pb-24' : ''}>
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -239,6 +334,19 @@ export default function LeadsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left">
+                {isAdmin && (
+                  <th className="bg-slate-50/80 px-4 py-3.5 w-10">
+                    <button onClick={toggleSelectAll} className="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                      {selectAll ? (
+                        <CheckSquare className="h-4 w-4 text-primary" />
+                      ) : selectedLeads.size > 0 ? (
+                        <Minus className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </button>
+                  </th>
+                )}
                 <th className="bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
                 <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">
                   Email
@@ -255,6 +363,9 @@ export default function LeadsPage() {
                 <th className="hidden bg-slate-50/80 px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">
                   Created
                 </th>
+                <th className="bg-slate-50/80 px-4 py-3.5 w-10">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -262,8 +373,22 @@ export default function LeadsPage() {
                 <tr
                   key={lead.id}
                   onClick={() => navigate(`/leads/${lead.id}`)}
-                  className="cursor-pointer transition-colors hover:bg-slate-50"
+                  className={cn(
+                    'cursor-pointer transition-colors hover:bg-slate-50',
+                    selectedLeads.has(lead.id) && 'bg-indigo-50/50'
+                  )}
                 >
+                  {isAdmin && (
+                    <td className="px-4 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => toggleSelectLead(lead.id)} className="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+                        {selectedLeads.has(lead.id) ? (
+                          <CheckSquare className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </button>
+                    </td>
+                  )}
                   <td className="px-4 py-3.5 font-medium text-text">{lead.firstName} {lead.lastName}</td>
                   <td className="hidden px-4 py-3.5 text-text-secondary md:table-cell">{lead.email || '—'}</td>
                   <td className="hidden px-4 py-3.5 text-text-secondary lg:table-cell">{lead.phone || '—'}</td>
@@ -323,6 +448,18 @@ export default function LeadsPage() {
                   </td>
                   <td className="hidden px-4 py-3.5 text-text-secondary sm:table-cell">
                     {format(new Date(lead.createdAt), 'MMM d, yyyy')}
+                  </td>
+                  <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => {
+                        const url = generateWhatsAppLinkFromRow(lead, currentUser?.agency?.name ?? 'RealtyNest')
+                        window.open(url, '_blank')
+                      }}
+                      title="Share on WhatsApp"
+                      className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-50 hover:text-green-600"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -390,6 +527,71 @@ export default function LeadsPage() {
 
       {/* Create Lead Modal */}
       <CreateLeadModal open={modalOpen} onClose={() => setModalOpen(false)} />
+
+      {/* Floating Bulk Action Bar */}
+      {isAdmin && selectedLeads.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3 shadow-2xl">
+          <span className="text-sm font-semibold text-text whitespace-nowrap">
+            {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''} selected
+          </span>
+
+          <div className="h-5 w-px bg-slate-200" />
+
+          <select
+            disabled={bulkLoading}
+            defaultValue=""
+            onChange={(e) => {
+              handleBulkAssign(e.target.value)
+              e.target.value = ''
+            }}
+            className={cn(selectClass, 'text-xs py-1.5')}
+          >
+            <option value="" disabled>Assign To</option>
+            {teamMembers.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.firstName} {m.lastName}
+              </option>
+            ))}
+          </select>
+
+          <select
+            disabled={bulkLoading}
+            defaultValue=""
+            onChange={(e) => {
+              handleBulkStatus(e.target.value)
+              e.target.value = ''
+            }}
+            className={cn(selectClass, 'text-xs py-1.5')}
+          >
+            <option value="" disabled>Change Status</option>
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            disabled={bulkLoading}
+            onClick={handleBulkDelete}
+            className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
+
+          <button
+            disabled={bulkLoading}
+            onClick={clearSelection}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-slate-50"
+          >
+            <X className="h-3.5 w-3.5" />
+            Clear
+          </button>
+
+          {bulkLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+        </div>
+      )}
     </div>
   )
 }

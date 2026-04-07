@@ -13,6 +13,7 @@ import {
   Search,
   X,
   ChevronDown,
+  Clock,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
@@ -287,6 +288,7 @@ export default function Layout() {
     { label: 'Leads', path: '/leads', icon: Users },
     { label: 'Properties', path: '/properties', icon: Building2 },
     { label: 'Team', path: '/team', icon: UserCog },
+    { label: 'Activity', path: '/activity', icon: Clock },
     ...(user?.role === 'SUPER_ADMIN'
       ? [{ label: 'Agencies', path: '/admin/agencies', icon: Landmark }]
       : []),

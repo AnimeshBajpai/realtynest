@@ -76,8 +76,25 @@ export const assignLeadSchema = z.object({
   assignedToId: z.string().uuid('Invalid assignedToId'),
 });
 
+export const bulkAssignSchema = z.object({
+  leadIds: z.array(z.string()).min(1, 'At least one lead is required'),
+  assignedToId: z.string(),
+});
+
+export const bulkStatusSchema = z.object({
+  leadIds: z.array(z.string()).min(1, 'At least one lead is required'),
+  status: z.enum(leadStatusValues, { message: 'Invalid lead status' }),
+});
+
+export const bulkDeleteSchema = z.object({
+  leadIds: z.array(z.string()).min(1, 'At least one lead is required'),
+});
+
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 export type LeadQueryInput = z.infer<typeof leadQuerySchema>;
 export type UpdateLeadStatusInput = z.infer<typeof updateLeadStatusSchema>;
 export type AssignLeadInput = z.infer<typeof assignLeadSchema>;
+export type BulkAssignInput = z.infer<typeof bulkAssignSchema>;
+export type BulkStatusInput = z.infer<typeof bulkStatusSchema>;
+export type BulkDeleteInput = z.infer<typeof bulkDeleteSchema>;

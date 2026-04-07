@@ -1,4 +1,7 @@
 import type { Request, Response } from 'express';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { prisma } from '../config/database.js';
 import { userService } from '../services/user.service.js';
 import {
   createBrokerSchema,
@@ -82,5 +85,44 @@ export const userController = {
     );
 
     res.json({ user });
+  },
+
+  async resetPassword(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401);
+    }
+
+    const role = req.user.role;
+    if (role !== 'AGENCY_ADMIN' && role !== 'SUPER_ADMIN') {
+      throw new AppError('Insufficient permissions', 403);
+    }
+
+    const targetId = req.params.id as string;
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, agencyId: true, role: true },
+    });
+
+    if (!targetUser) {
+      throw new AppError('User not found', 404);
+    }
+
+    // AGENCY_ADMIN can only reset users within their own agency
+    if (role === 'AGENCY_ADMIN') {
+      if (!req.user.agencyId || targetUser.agencyId !== req.user.agencyId) {
+        throw new AppError('User not found in your agency', 403);
+      }
+    }
+
+    const plainPassword = crypto.randomBytes(5).toString('hex') + '@A1';
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+
+    await prisma.user.update({
+      where: { id: targetId },
+      data: { passwordHash },
+    });
+
+    res.json({ password: plainPassword });
   },
 };

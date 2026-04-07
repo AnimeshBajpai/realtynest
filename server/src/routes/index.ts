@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 import authRouter from './auth.routes.js';
 import userRouter from './user.routes.js';
 import leadRouter from './lead.routes.js';
@@ -9,6 +10,7 @@ import communicationRouter from './communication.routes.js';
 import dashboardRouter from './dashboard.routes.js';
 import notificationRouter from './notification.routes.js';
 import searchRouter from './search.routes.js';
+import activityRouter from './activity.routes.js';
 
 const router = Router();
 
@@ -32,5 +34,6 @@ router.use('/', communicationRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/notifications', notificationRouter);
 router.use('/search', searchRouter);
+router.use('/activity', authenticateToken, activityRouter);
 
 export default router;

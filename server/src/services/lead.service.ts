@@ -330,6 +330,235 @@ export const leadService = {
     return activities;
   },
 
+  async bulkAssign(leadIds: string[], agencyId: string, userId: string, assignedToId: string) {
+    const targetUser = await prisma.user.findFirst({
+      where: { id: assignedToId, agencyId, isActive: true },
+    });
+
+    if (!targetUser) {
+      throw new AppError('Assigned user not found in this agency', 400);
+    }
+
+    const leads = await prisma.lead.findMany({
+      where: { id: { in: leadIds }, agencyId },
+    });
+
+    if (leads.length !== leadIds.length) {
+      throw new AppError('One or more leads not found in this agency', 404);
+    }
+
+    await prisma.lead.updateMany({
+      where: { id: { in: leadIds }, agencyId },
+      data: { assignedToId },
+    });
+
+    for (const lead of leads) {
+      await prisma.leadActivity.create({
+        data: {
+          leadId: lead.id,
+          userId,
+          action: 'assignment',
+          oldValue: lead.assignedToId,
+          newValue: assignedToId,
+          metadata: {
+            assignedToName: `${targetUser.firstName} ${targetUser.lastName}`,
+            bulkAction: true,
+          },
+        },
+      });
+
+      await notifyLeadStakeholders(
+        agencyId, userId, assignedToId, lead.createdById,
+        'LEAD_ASSIGNED',
+        `Lead ${lead.firstName} ${lead.lastName} assigned to ${targetUser.firstName} ${targetUser.lastName}`,
+        lead.id,
+      );
+    }
+
+    return { count: leads.length };
+  },
+
+  async bulkUpdateStatus(leadIds: string[], agencyId: string, userId: string, newStatus: string) {
+    const leads = await prisma.lead.findMany({
+      where: { id: { in: leadIds }, agencyId },
+    });
+
+    if (leads.length !== leadIds.length) {
+      throw new AppError('One or more leads not found in this agency', 404);
+    }
+
+    await prisma.lead.updateMany({
+      where: { id: { in: leadIds }, agencyId },
+      data: { status: newStatus as any },
+    });
+
+    for (const lead of leads) {
+      await prisma.leadActivity.create({
+        data: {
+          leadId: lead.id,
+          userId,
+          action: 'status_change',
+          oldValue: lead.status,
+          newValue: newStatus,
+          metadata: { bulkAction: true },
+        },
+      });
+
+      await notifyLeadStakeholders(
+        agencyId, userId, lead.assignedToId, lead.createdById,
+        'STATUS_CHANGE',
+        `Lead ${lead.firstName} ${lead.lastName} status changed to ${newStatus}`,
+        lead.id,
+      );
+    }
+
+    return { count: leads.length };
+  },
+
+  async bulkDelete(leadIds: string[], agencyId: string, userId: string) {
+    const leads = await prisma.lead.findMany({
+      where: { id: { in: leadIds }, agencyId },
+      select: { id: true },
+    });
+
+    if (leads.length !== leadIds.length) {
+      throw new AppError('One or more leads not found in this agency', 404);
+    }
+
+    // Delete related records first, then leads
+    await prisma.leadActivity.deleteMany({
+      where: { leadId: { in: leadIds } },
+    });
+
+    await prisma.communication.deleteMany({
+      where: { leadId: { in: leadIds } },
+    });
+
+    await prisma.leadProperty.deleteMany({
+      where: { leadId: { in: leadIds } },
+    });
+
+    await prisma.lead.deleteMany({
+      where: { id: { in: leadIds }, agencyId },
+    });
+
+    return { count: leads.length };
+  },
+
+  async checkDuplicate(agencyId: string, phone?: string, email?: string) {
+    const conditions: Prisma.LeadWhereInput[] = [];
+    if (phone) conditions.push({ phone: { equals: phone, mode: 'insensitive' } });
+    if (email) conditions.push({ email: { equals: email, mode: 'insensitive' } });
+
+    if (conditions.length === 0) return [];
+
+    const duplicates = await prisma.lead.findMany({
+      where: {
+        agencyId,
+        OR: conditions,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        email: true,
+        status: true,
+      },
+      take: 10,
+    });
+
+    return duplicates;
+  },
+
+  async getPropertySuggestions(leadId: string, agencyId: string) {
+    const lead = await prisma.lead.findFirst({
+      where: { id: leadId, agencyId },
+      select: {
+        budgetMin: true,
+        budgetMax: true,
+        preferredLocation: true,
+        propertyTypePreference: true,
+      },
+    });
+
+    if (!lead) {
+      throw new AppError('Lead not found', 404);
+    }
+
+    const where: Prisma.PropertyWhereInput = { agencyId };
+    const orConditions: Prisma.PropertyWhereInput[] = [];
+
+    if (lead.budgetMin != null || lead.budgetMax != null) {
+      const priceFilter: Prisma.FloatNullableFilter = {};
+      if (lead.budgetMin != null) priceFilter.gte = lead.budgetMin;
+      if (lead.budgetMax != null) priceFilter.lte = lead.budgetMax;
+      orConditions.push({ price: priceFilter });
+    }
+
+    if (lead.preferredLocation) {
+      orConditions.push({
+        OR: [
+          { city: { contains: lead.preferredLocation, mode: 'insensitive' } },
+          { state: { contains: lead.preferredLocation, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (lead.propertyTypePreference) {
+      orConditions.push({ type: lead.propertyTypePreference as any });
+    }
+
+    if (orConditions.length === 0) return [];
+
+    where.OR = orConditions;
+
+    const properties = await prisma.property.findMany({
+      where,
+      take: 50,
+    });
+
+    const scored = properties.map((property) => {
+      let matchScore = 0;
+      const matches = { budget: false, location: false, type: false };
+
+      if (
+        property.price != null &&
+        (lead.budgetMin == null || property.price >= lead.budgetMin) &&
+        (lead.budgetMax == null || property.price <= lead.budgetMax) &&
+        (lead.budgetMin != null || lead.budgetMax != null)
+      ) {
+        matchScore++;
+        matches.budget = true;
+      }
+
+      if (
+        lead.preferredLocation &&
+        ((property.city &&
+          property.city.toLowerCase().includes(lead.preferredLocation.toLowerCase())) ||
+          (property.state &&
+            property.state.toLowerCase().includes(lead.preferredLocation.toLowerCase())))
+      ) {
+        matchScore++;
+        matches.location = true;
+      }
+
+      if (
+        lead.propertyTypePreference &&
+        property.type === lead.propertyTypePreference
+      ) {
+        matchScore++;
+        matches.type = true;
+      }
+
+      return { property, matchScore, matches };
+    });
+
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+
+    return scored.slice(0, 5);
+  },
+
   async getLeadStats(agencyId: string) {
     const [
       total,

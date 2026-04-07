@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
-import { X, Loader2, Plus, Building2 } from 'lucide-react'
+import { X, Loader2, Plus, Building2, Key, Copy, Check } from 'lucide-react'
 import { cn } from '../lib/utils'
 import api from '../lib/api'
+
+interface AdminUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+}
 
 interface AgencyRow {
   id: string
@@ -10,6 +17,7 @@ interface AgencyRow {
   isActive: boolean
   createdAt: string
   email?: string
+  adminUser?: AdminUser | null
 }
 
 interface CreateAgencyForm {
@@ -39,6 +47,10 @@ export default function AdminAgenciesPage() {
     adminLastName: '',
     adminPhone: '',
   })
+  const [resetConfirmAdmin, setResetConfirmAdmin] = useState<AdminUser | null>(null)
+  const [resettingPassword, setResettingPassword] = useState(false)
+  const [newPassword, setNewPassword] = useState<string | null>(null)
+  const [passwordCopied, setPasswordCopied] = useState(false)
 
   const fetchAgencies = async () => {
     setLoading(true)
@@ -110,6 +122,31 @@ export default function AdminAgenciesPage() {
     }
   }
 
+  const handleResetPassword = async () => {
+    if (!resetConfirmAdmin) return
+    setResettingPassword(true)
+    try {
+      const { data } = await api.post<{ password: string }>(
+        `/users/${resetConfirmAdmin.id}/reset-password`
+      )
+      setResetConfirmAdmin(null)
+      setNewPassword(data.password)
+      setPasswordCopied(false)
+    } catch {
+      setError('Failed to reset password')
+      setResetConfirmAdmin(null)
+    } finally {
+      setResettingPassword(false)
+    }
+  }
+
+  const copyPassword = async () => {
+    if (!newPassword) return
+    await navigator.clipboard.writeText(newPassword)
+    setPasswordCopied(true)
+    setTimeout(() => setPasswordCopied(false), 2000)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -149,10 +186,11 @@ export default function AdminAgenciesPage() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80">
                   <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Admin Email</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Admin</th>
                   <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Plan</th>
                   <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
                   <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Created</th>
+                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -160,7 +198,16 @@ export default function AdminAgenciesPage() {
                   <tr key={agency.id} className="transition-colors hover:bg-slate-50">
                     <td className="px-6 py-4 font-medium text-text">{agency.name}</td>
                     <td className="px-6 py-4 text-text-secondary">
-                      {agency.email ?? '—'}
+                      {agency.adminUser ? (
+                        <div>
+                          <p className="text-sm font-medium text-text">
+                            {agency.adminUser.firstName} {agency.adminUser.lastName}
+                          </p>
+                          <p className="text-xs text-text-secondary">{agency.adminUser.email}</p>
+                        </div>
+                      ) : (
+                        <span>—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
@@ -181,6 +228,17 @@ export default function AdminAgenciesPage() {
                     </td>
                     <td className="px-6 py-4 text-text-secondary">
                       {new Date(agency.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      {agency.adminUser && (
+                        <button
+                          onClick={() => setResetConfirmAdmin(agency.adminUser!)}
+                          className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                          title="Reset Admin Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -316,6 +374,88 @@ export default function AdminAgenciesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Confirmation Modal */}
+      {resetConfirmAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text">Reset Password</h2>
+              <button
+                onClick={() => setResetConfirmAdmin(null)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-text-secondary">
+              Are you sure you want to reset the password for{' '}
+              <span className="font-medium text-text">
+                {resetConfirmAdmin.firstName} {resetConfirmAdmin.lastName}
+              </span>
+              ? A new random password will be generated.
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setResetConfirmAdmin(null)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={resettingPassword}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
+              >
+                {resettingPassword && <Loader2 className="h-4 w-4 animate-spin" />}
+                {resettingPassword ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Password Modal */}
+      {newPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text">New Password</h2>
+              <button
+                onClick={() => setNewPassword(null)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-text-secondary">
+              The password has been reset. Share this new password with the admin securely.
+            </p>
+            <div className="mt-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <code className="flex-1 text-sm font-medium text-text">{newPassword}</code>
+              <button
+                onClick={copyPassword}
+                className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600"
+                title="Copy to clipboard"
+              >
+                {passwordCopied ? (
+                  <Check className="h-4 w-4 text-success" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setNewPassword(null)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
