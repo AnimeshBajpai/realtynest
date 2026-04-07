@@ -38,6 +38,21 @@ export const leadService = {
       },
     });
 
+    // Notify agency admins about new lead
+    const admins = await prisma.user.findMany({
+      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: createdById } },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      await notifyUser(
+        admin.id,
+        'LEAD_ASSIGNED',
+        `New lead created: ${data.firstName} ${data.lastName}`,
+        undefined,
+        `/leads/${lead.id}`,
+      );
+    }
+
     return lead;
   },
 
@@ -168,6 +183,33 @@ export const leadService = {
           ...a,
         })),
       });
+
+      // Notify agency admins about lead updates
+      const admins = await prisma.user.findMany({
+        where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
+        select: { id: true },
+      });
+      const changedFields = activities.map((a) => a.action.replace('field_updated:', '')).join(', ');
+      for (const admin of admins) {
+        await notifyUser(
+          admin.id,
+          'STATUS_CHANGE',
+          `Lead ${existing.firstName} ${existing.lastName} updated: ${changedFields}`,
+          undefined,
+          `/leads/${id}`,
+        );
+      }
+
+      // Notify assigned broker about updates to their lead
+      if (existing.assignedToId && existing.assignedToId !== userId) {
+        await notifyUser(
+          existing.assignedToId,
+          'STATUS_CHANGE',
+          `Lead ${existing.firstName} ${existing.lastName} updated: ${changedFields}`,
+          undefined,
+          `/leads/${id}`,
+        );
+      }
     }
 
     return lead;
@@ -279,6 +321,23 @@ export const leadService = {
         undefined,
         `/leads/${id}`,
       );
+    }
+
+    // Notify agency admins about assignment change
+    const admins = await prisma.user.findMany({
+      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      if (admin.id !== assignedToId) {
+        await notifyUser(
+          admin.id,
+          'LEAD_ASSIGNED',
+          `Lead ${existing.firstName} ${existing.lastName} assigned to ${targetUser.firstName} ${targetUser.lastName}`,
+          undefined,
+          `/leads/${id}`,
+        );
+      }
     }
 
     return lead;

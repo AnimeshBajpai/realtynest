@@ -270,7 +270,7 @@ export default function Layout() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const { data } = await api.get('/notifications/unread-count')
-      setUnreadCount(data.count ?? 0)
+      setUnreadCount(data.unreadCount ?? data.count ?? 0)
     } catch {
       // silent
     }
