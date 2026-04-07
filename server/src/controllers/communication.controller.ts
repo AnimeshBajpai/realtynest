@@ -85,6 +85,22 @@ export const communicationController = {
     res.json({ message: 'Communication deleted successfully' });
   },
 
+  async completeCommunication(req: Request, res: Response) {
+    if (!req.user || !req.user.agencyId) {
+      throw new AppError('Agency context required', 400);
+    }
+
+    const communication = await communicationService.completeCommunication(
+      req.params.id as string,
+      req.params.leadId as string,
+      req.user.id,
+      req.user.agencyId,
+      req.body.outcome,
+    );
+
+    res.json({ communication });
+  },
+
   async getUpcomingFollowUps(req: Request, res: Response) {
     if (!req.user || !req.user.agencyId) {
       throw new AppError('Agency context required', 400);

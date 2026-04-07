@@ -109,11 +109,12 @@ model User {
 
   agency Agency? @relation(fields: [agencyId], references: [id])
 
-  assignedLeads  Lead[]          @relation("AssignedTo")
-  createdLeads   Lead[]          @relation("CreatedBy")
-  communications Communication[]
-  notifications  Notification[]
-  leadActivities LeadActivity[]
+  assignedLeads      Lead[]          @relation("AssignedTo")
+  createdLeads       Lead[]          @relation("CreatedBy")
+  communications     Communication[] @relation("CreatedCommunications")
+  assignedFollowUps  Communication[] @relation("AssignedFollowUps")
+  notifications      Notification[]
+  leadActivities     LeadActivity[]
 
   @@index([agencyId])
 }
@@ -198,22 +199,26 @@ model LeadProperty {
 }
 
 model Communication {
-  id          String            @id @default(uuid())
-  leadId      String
-  userId      String
-  type        CommunicationType
-  subject     String?
-  body        String?
-  outcome     String?
-  scheduledAt DateTime?
-  completedAt DateTime?
-  createdAt   DateTime          @default(now())
+  id             String            @id @default(uuid())
+  leadId         String
+  userId         String
+  assignedToId   String?
+  type           CommunicationType
+  subject        String?
+  body           String?
+  outcome        String?
+  isFollowUp     Boolean           @default(false)
+  scheduledAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime          @default(now())
 
-  lead Lead @relation(fields: [leadId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  lead       Lead  @relation(fields: [leadId], references: [id])
+  user       User  @relation("CreatedCommunications", fields: [userId], references: [id])
+  assignedTo User? @relation("AssignedFollowUps", fields: [assignedToId], references: [id])
 
   @@index([leadId])
   @@index([userId])
+  @@index([assignedToId])
 }
 
 model Notification {

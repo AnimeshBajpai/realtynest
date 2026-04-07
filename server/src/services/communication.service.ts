@@ -6,6 +6,7 @@ import type {
   UpdateCommunicationInput,
   CommunicationQueryInput,
 } from '../validators/communication.validators.js';
+import { notifyUser } from './notification.service.js';
 
 const userNameSelect = {
   id: true,
@@ -23,6 +24,7 @@ export const communicationService = {
   ) {
     const lead = await prisma.lead.findFirst({
       where: { id: leadId, agencyId },
+      select: { id: true, firstName: true, lastName: true, assignedToId: true },
     });
 
     if (!lead) {
@@ -33,6 +35,8 @@ export const communicationService = {
       data: {
         leadId,
         userId,
+        assignedToId: data.assignedToId ?? undefined,
+        isFollowUp: data.isFollowUp ?? false,
         type: data.type,
         subject: data.subject,
         body: data.body,
@@ -42,6 +46,7 @@ export const communicationService = {
       },
       include: {
         user: { select: userNameSelect },
+        assignedTo: { select: userNameSelect },
       },
     });
 
@@ -49,7 +54,7 @@ export const communicationService = {
       data: {
         leadId,
         userId,
-        action: 'communication_added',
+        action: data.isFollowUp ? 'followup_created' : 'communication_added',
         newValue: data.type,
         metadata: {
           communicationId: communication.id,
@@ -57,6 +62,99 @@ export const communicationService = {
         },
       },
     });
+
+    // Notify assigned broker on follow-up
+    if (data.isFollowUp && data.assignedToId && data.assignedToId !== userId) {
+      const leadName = `${lead.firstName} ${lead.lastName}`;
+      const dueDate = data.scheduledAt
+        ? ` by ${new Date(data.scheduledAt).toLocaleDateString('en-IN')}`
+        : '';
+      await notifyUser(
+        data.assignedToId,
+        'FOLLOW_UP_ASSIGNED',
+        `Follow-up assigned: ${data.type} with ${leadName}${dueDate}`,
+        data.subject || undefined,
+        `/leads/${leadId}`,
+      );
+    }
+
+    // Notify assigned broker when someone else adds a communication to their lead
+    if (!data.isFollowUp && lead.assignedToId && lead.assignedToId !== userId) {
+      await notifyUser(
+        lead.assignedToId,
+        'COMMUNICATION',
+        `New ${data.type.toLowerCase()} logged on ${lead.firstName} ${lead.lastName}`,
+        data.subject || undefined,
+        `/leads/${leadId}`,
+      );
+    }
+
+    return communication;
+  },
+
+  async completeCommunication(
+    id: string,
+    leadId: string,
+    userId: string,
+    agencyId: string,
+    outcome?: string,
+  ) {
+    const lead = await prisma.lead.findFirst({
+      where: { id: leadId, agencyId },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    if (!lead) {
+      throw new AppError('Lead not found', 404);
+    }
+
+    const existing = await prisma.communication.findFirst({
+      where: { id, leadId },
+    });
+
+    if (!existing) {
+      throw new AppError('Communication not found', 404);
+    }
+
+    if (existing.completedAt) {
+      throw new AppError('Already completed', 400);
+    }
+
+    const communication = await prisma.communication.update({
+      where: { id },
+      data: {
+        completedAt: new Date(),
+        outcome: outcome ?? existing.outcome,
+      },
+      include: {
+        user: { select: userNameSelect },
+        assignedTo: { select: userNameSelect },
+      },
+    });
+
+    await prisma.leadActivity.create({
+      data: {
+        leadId,
+        userId,
+        action: 'followup_completed',
+        newValue: existing.type,
+        metadata: {
+          communicationId: id,
+          subject: existing.subject ?? null,
+        },
+      },
+    });
+
+    // Notify the admin who created the follow-up
+    if (existing.userId !== userId) {
+      await notifyUser(
+        existing.userId,
+        'FOLLOW_UP_COMPLETED',
+        `Follow-up completed: ${existing.type} with ${lead.firstName} ${lead.lastName}`,
+        outcome || undefined,
+        `/leads/${leadId}`,
+      );
+    }
 
     return communication;
   },
@@ -87,6 +185,7 @@ export const communicationService = {
         where,
         include: {
           user: { select: userNameSelect },
+          assignedTo: { select: userNameSelect },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -128,7 +227,6 @@ export const communicationService = {
       throw new AppError('Communication not found', 404);
     }
 
-    // Only creator or admin can update
     if (existing.userId !== userId && userRole === 'BROKER') {
       throw new AppError('You can only update your own communications', 403);
     }
@@ -146,6 +244,7 @@ export const communicationService = {
       },
       include: {
         user: { select: userNameSelect },
+        assignedTo: { select: userNameSelect },
       },
     });
 
@@ -175,7 +274,6 @@ export const communicationService = {
       throw new AppError('Communication not found', 404);
     }
 
-    // Only creator or admin can delete
     if (existing.userId !== userId && userRole === 'BROKER') {
       throw new AppError('You can only delete your own communications', 403);
     }
@@ -185,20 +283,24 @@ export const communicationService = {
 
   async getUpcomingFollowUps(agencyId: string, userId: string, role: string) {
     const where: Prisma.CommunicationWhereInput = {
-      scheduledAt: { gt: new Date() },
+      scheduledAt: { not: null },
       completedAt: null,
       lead: { agencyId },
     };
 
-    // BROKER can only see their own follow-ups
+    // BROKER sees follow-ups assigned to them or created by them
     if (role === 'BROKER') {
-      where.userId = userId;
+      where.OR = [
+        { assignedToId: userId },
+        { userId, isFollowUp: false },
+      ];
     }
 
     const communications = await prisma.communication.findMany({
       where,
       include: {
         user: { select: userNameSelect },
+        assignedTo: { select: userNameSelect },
         lead: {
           select: {
             id: true,

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, CheckCheck, Loader2, Inbox, UserPlus, AlertCircle, MessageSquare } from 'lucide-react'
+import { Bell, CheckCheck, Loader2, Inbox, UserPlus, AlertCircle, MessageSquare, CheckCircle } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '../lib/utils'
 import api from '../lib/api'
@@ -13,6 +13,8 @@ function NotificationIcon({ type, isRead }: { type?: string; isRead: boolean }) 
       case 'LEAD_ASSIGNED': return <UserPlus className={iconClass} />
       case 'STATUS_CHANGE': return <AlertCircle className={iconClass} />
       case 'COMMUNICATION': return <MessageSquare className={iconClass} />
+      case 'FOLLOW_UP_ASSIGNED': return <Bell className={iconClass} />
+      case 'FOLLOW_UP_COMPLETED': return <CheckCircle className={iconClass} />
       default: return <Bell className={iconClass} />
     }
   })()

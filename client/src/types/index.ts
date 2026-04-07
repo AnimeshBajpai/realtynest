@@ -142,6 +142,9 @@ export interface Communication {
   outcome?: string
   scheduledAt?: string
   completedAt?: string
+  isFollowUp?: boolean
+  assignedToId?: string
+  assignedTo?: { firstName: string; lastName: string }
   createdAt: string
   user?: { firstName: string; lastName: string }
 }

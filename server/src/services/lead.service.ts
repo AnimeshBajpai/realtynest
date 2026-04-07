@@ -6,6 +6,7 @@ import type {
   UpdateLeadInput,
   LeadQueryInput,
 } from '../validators/lead.validators.js';
+import { notifyUser } from './notification.service.js';
 
 const userNameSelect = {
   id: true,
@@ -200,6 +201,17 @@ export const leadService = {
       },
     });
 
+    // Notify assigned broker about status change
+    if (existing.assignedToId && existing.assignedToId !== userId) {
+      await notifyUser(
+        existing.assignedToId,
+        'STATUS_CHANGE',
+        `Lead ${existing.firstName} ${existing.lastName} status changed to ${newStatus}`,
+        undefined,
+        `/leads/${id}`,
+      );
+    }
+
     return lead;
   },
 
@@ -242,6 +254,17 @@ export const leadService = {
         },
       },
     });
+
+    // Notify the broker they've been assigned a lead
+    if (assignedToId !== userId) {
+      await notifyUser(
+        assignedToId,
+        'LEAD_ASSIGNED',
+        `Lead assigned: ${existing.firstName} ${existing.lastName}`,
+        undefined,
+        `/leads/${id}`,
+      );
+    }
 
     return lead;
   },

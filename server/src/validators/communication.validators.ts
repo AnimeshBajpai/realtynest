@@ -7,6 +7,8 @@ export const createCommunicationSchema = z.object({
   subject: z.string().optional(),
   body: z.string().optional(),
   outcome: z.string().optional(),
+  isFollowUp: z.boolean().optional().default(false),
+  assignedToId: z.string().optional(),
   scheduledAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
   completedAt: z.string().optional().nullable().transform((v) => v ? new Date(v).toISOString() : null),
 });

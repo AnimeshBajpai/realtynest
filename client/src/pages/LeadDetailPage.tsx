@@ -17,6 +17,8 @@ import {
   MessageSquare,
   FileText,
   Trash2,
+  Bell,
+  CheckCircle,
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { cn } from '../lib/utils'
@@ -107,6 +109,7 @@ export default function LeadDetailPage() {
   const [communications, setCommunications] = useState<Communication[]>([])
   const [commsLoading, setCommsLoading] = useState(false)
   const [showCommModal, setShowCommModal] = useState(false)
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false)
   const [commSubmitting, setCommSubmitting] = useState(false)
   const [commForm, setCommForm] = useState({
     type: 'CALL' as CommunicationType,
@@ -115,6 +118,13 @@ export default function LeadDetailPage() {
     outcome: '',
     scheduledAt: '',
     completedAt: '',
+  })
+  const [followUpForm, setFollowUpForm] = useState({
+    type: 'CALL' as CommunicationType,
+    subject: '',
+    body: '',
+    scheduledAt: '',
+    assignedToId: '',
   })
 
   const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'AGENCY_ADMIN'
@@ -186,6 +196,40 @@ export default function LeadDetailPage() {
     if (!id) return
     try {
       await api.delete(`/leads/${id}/communications/${commId}`)
+      fetchCommunications(id)
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleCreateFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!id) return
+    setCommSubmitting(true)
+    try {
+      await api.post(`/leads/${id}/communications`, {
+        type: followUpForm.type,
+        subject: followUpForm.subject.trim() || undefined,
+        body: followUpForm.body.trim() || undefined,
+        scheduledAt: followUpForm.scheduledAt || undefined,
+        isFollowUp: true,
+        assignedToId: followUpForm.assignedToId || undefined,
+      })
+      setShowFollowUpModal(false)
+      setFollowUpForm({ type: 'CALL', subject: '', body: '', scheduledAt: '', assignedToId: '' })
+      fetchCommunications(id)
+    } catch {
+      // ignore
+    } finally {
+      setCommSubmitting(false)
+    }
+  }
+
+  const handleCompleteFollowUp = async (commId: string) => {
+    if (!id) return
+    const outcome = window.prompt('Enter outcome notes (optional):')
+    try {
+      await api.patch(`/leads/${id}/communications/${commId}/complete`, { outcome: outcome || undefined })
       fetchCommunications(id)
     } catch {
       // ignore
@@ -491,13 +535,24 @@ export default function LeadDetailPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold text-text">Communications</h2>
-              <button
-                onClick={() => setShowCommModal(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Communication
-              </button>
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowFollowUpModal(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2 text-sm font-medium text-amber-700 shadow-sm transition-colors hover:bg-amber-100"
+                  >
+                    <Bell className="h-3.5 w-3.5" />
+                    Add Follow-Up
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowCommModal(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Communication
+                </button>
+              </div>
             </div>
             {commsLoading ? (
               <div className="flex items-center justify-center py-6">
@@ -512,18 +567,42 @@ export default function LeadDetailPage() {
                 {communications.map((comm) => (
                   <div
                     key={comm.id}
-                    className="rounded-lg border border-slate-200 p-4 transition-shadow hover:shadow-sm"
+                    className={cn(
+                      "rounded-lg border p-4 transition-shadow hover:shadow-sm",
+                      comm.isFollowUp && !comm.completedAt
+                        ? "border-amber-300 bg-amber-50/50"
+                        : "border-slate-200",
+                      comm.isFollowUp && !comm.completedAt && comm.scheduledAt && new Date(comm.scheduledAt) < new Date()
+                        ? "border-red-300 bg-red-50/50"
+                        : "",
+                    )}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-lg bg-gray-100 p-2 text-text-secondary">
-                          {commTypeIcon(comm.type)}
+                        <div className={cn(
+                          "mt-0.5 rounded-lg p-2",
+                          comm.isFollowUp && !comm.completedAt ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-text-secondary",
+                        )}>
+                          {comm.isFollowUp ? <Bell className="h-4 w-4" /> : commTypeIcon(comm.type)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                              {comm.type}
+                            <span className={cn(
+                              "rounded-full px-2 py-0.5 text-xs font-medium",
+                              comm.isFollowUp ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700",
+                            )}>
+                              {comm.isFollowUp ? `🔔 Follow-Up: ${comm.type}` : comm.type}
                             </span>
+                            {comm.isFollowUp && comm.completedAt && (
+                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                ✅ Completed
+                              </span>
+                            )}
+                            {comm.isFollowUp && !comm.completedAt && comm.scheduledAt && new Date(comm.scheduledAt) < new Date() && (
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                                ⚠️ Overdue
+                              </span>
+                            )}
                             {comm.subject && (
                               <span className="text-sm font-medium text-text">{comm.subject}</span>
                             )}
@@ -544,6 +623,11 @@ export default function LeadDetailPage() {
                                 By {comm.user.firstName} {comm.user.lastName}
                               </span>
                             )}
+                            {comm.isFollowUp && comm.assignedTo && (
+                              <span className="font-medium text-amber-700">
+                                Assigned to: {comm.assignedTo.firstName} {comm.assignedTo.lastName}
+                              </span>
+                            )}
                             <span>
                               {formatDistanceToNow(new Date(comm.createdAt), { addSuffix: true })}
                             </span>
@@ -560,15 +644,26 @@ export default function LeadDetailPage() {
                           </div>
                         </div>
                       </div>
-                      {(isAdmin || comm.userId === currentUser?.id) && (
-                        <button
-                          onClick={() => handleDeleteComm(comm.id)}
-                          className="ml-2 shrink-0 rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger"
-                          title="Delete communication"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+                      <div className="ml-2 flex shrink-0 items-center gap-1">
+                        {comm.isFollowUp && !comm.completedAt && (
+                          <button
+                            onClick={() => handleCompleteFollowUp(comm.id)}
+                            className="rounded p-1 text-green-600 hover:bg-green-50"
+                            title="Mark Complete"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        {(isAdmin || comm.userId === currentUser?.id) && (
+                          <button
+                            onClick={() => handleDeleteComm(comm.id)}
+                            className="rounded p-1 text-text-secondary hover:bg-red-50 hover:text-danger"
+                            title="Delete communication"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -975,6 +1070,107 @@ export default function LeadDetailPage() {
                 >
                   {commSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Follow-Up Modal */}
+      {showFollowUpModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4 pt-[10vh]">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h2 className="text-lg font-semibold text-amber-700">
+                <Bell className="mr-2 inline h-5 w-5" />
+                Assign Follow-Up
+              </h2>
+              <button
+                onClick={() => setShowFollowUpModal(false)}
+                className="rounded-lg p-1 text-text-secondary hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateFollowUp} className="space-y-4 px-6 py-4">
+              <div>
+                <label className={labelClass}>Type</label>
+                <select
+                  value={followUpForm.type}
+                  onChange={(e) =>
+                    setFollowUpForm((p) => ({ ...p, type: e.target.value as CommunicationType }))
+                  }
+                  className={inputClass}
+                >
+                  <option value="CALL">Call</option>
+                  <option value="MEETING">Meeting</option>
+                  <option value="EMAIL">Email</option>
+                  <option value="SMS">SMS</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Subject *</label>
+                <input
+                  type="text"
+                  value={followUpForm.subject}
+                  onChange={(e) => setFollowUpForm((p) => ({ ...p, subject: e.target.value }))}
+                  className={inputClass}
+                  placeholder="e.g. Confirm site visit, Follow up on pricing"
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  value={followUpForm.body}
+                  onChange={(e) => setFollowUpForm((p) => ({ ...p, body: e.target.value }))}
+                  className={cn(inputClass, 'min-h-[80px] resize-y')}
+                  placeholder="Instructions for the broker..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Due Date *</label>
+                <input
+                  type="datetime-local"
+                  value={followUpForm.scheduledAt}
+                  onChange={(e) => setFollowUpForm((p) => ({ ...p, scheduledAt: e.target.value }))}
+                  className={inputClass}
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Assign To *</label>
+                <select
+                  value={followUpForm.assignedToId}
+                  onChange={(e) => setFollowUpForm((p) => ({ ...p, assignedToId: e.target.value }))}
+                  className={inputClass}
+                  required
+                >
+                  <option value="">Select a team member</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.firstName} {m.lastName} ({m.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowFollowUpModal(false)}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-text hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={commSubmitting}
+                  className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {commSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Assign Follow-Up
                 </button>
               </div>
             </form>
