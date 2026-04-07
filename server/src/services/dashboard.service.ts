@@ -62,10 +62,12 @@ export const dashboardService = {
     const activeLeads = totalLeads - closedWon - closedLost;
 
     return {
-      leadsByStatus: statusMap,
-      totalLeads,
-      activeLeads,
-      convertedLeads: closedWon,
+      myLeads: {
+        total: totalLeads,
+        active: activeLeads,
+        converted: closedWon,
+      },
+      byStatus: statusMap,
       upcomingFollowUps,
       recentActivity,
     };
@@ -186,23 +188,29 @@ export const dashboardService = {
       ? Math.round((closedWon / totalClosed) * 10000) / 100
       : 0;
 
+    const totalLeads = pipeline.reduce((sum, p) => sum + p.count, 0);
+    const activeLeads = totalLeads - closedWon - closedLost;
+
     return {
       pipeline,
-      leadsBySource: Object.fromEntries(
+      bySource: Object.fromEntries(
         leadsBySource.map((s) => [s.source, s._count.id]),
       ),
-      leadsByPriority: Object.fromEntries(
+      byPriority: Object.fromEntries(
         leadsByPriority.map((s) => [s.priority, s._count.id]),
       ),
       brokerPerformance,
       monthlyTrend,
-      properties: {
+      propertySummary: {
         total: propertiesTotal,
         byStatus: Object.fromEntries(
           propertiesByStatus.map((s) => [s.status, s._count.id]),
         ),
       },
       conversionRate,
+      totalLeads,
+      activeLeads,
+      convertedLeads: closedWon,
     };
   },
 
