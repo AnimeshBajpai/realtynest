@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -7,11 +7,14 @@ import {
   ChevronRight,
   Loader2,
   Users,
+  User,
   X,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '../lib/utils'
 import { useLeadStore, type LeadFilters } from '../store/leadStore'
+import { useAuthStore } from '../store/authStore'
+import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority } from '../types'
 import CreateLeadModal from '../components/CreateLeadModal'
 
@@ -77,6 +80,35 @@ export default function LeadsPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [searchInput, setSearchInput] = useState(filters.search ?? '')
+  const currentUser = useAuthStore((s) => s.user)
+  const isAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.role === 'AGENCY_ADMIN'
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
+  const [assignOpenId, setAssignOpenId] = useState<string | null>(null)
+  const assignRef = useRef<HTMLDivElement>(null)
+  const { assignLead } = useLeadStore()
+
+  useEffect(() => {
+    if (isAdmin) {
+      api.get('/users').then(({ data }) => {
+        const users = Array.isArray(data) ? data : data.users ?? []
+        setTeamMembers(users)
+      }).catch(() => {})
+    }
+  }, [isAdmin])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (assignRef.current && !assignRef.current.contains(e.target as Node)) setAssignOpenId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleAssign = async (leadId: string, userId: string) => {
+    await assignLead(leadId, userId)
+    setAssignOpenId(null)
+    fetchLeads()
+  }
 
   const load = useCallback(() => {
     fetchLeads()
@@ -270,10 +302,46 @@ export default function LeadsPage() {
                       {lead.priority}
                     </span>
                   </td>
-                  <td className="hidden px-4 py-3.5 text-text-secondary xl:table-cell">
-                    {lead.assignedTo
-                      ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
-                      : '—'}
+                  <td className="hidden px-4 py-3.5 xl:table-cell" onClick={(e) => e.stopPropagation()}>
+                    {isAdmin ? (
+                      <div className="relative" ref={assignOpenId === lead.id ? assignRef : undefined}>
+                        <button
+                          onClick={() => setAssignOpenId(assignOpenId === lead.id ? null : lead.id)}
+                          className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-text transition-colors hover:bg-slate-50"
+                        >
+                          <User className="h-3 w-3 text-slate-400" />
+                          {lead.assignedTo
+                            ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
+                            : 'Assign'}
+                        </button>
+                        {assignOpenId === lead.id && (
+                          <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+                            <div className="max-h-48 overflow-y-auto py-1">
+                              {teamMembers.map((m) => (
+                                <button
+                                  key={m.id}
+                                  onClick={() => handleAssign(lead.id, m.id)}
+                                  className={cn(
+                                    'flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-slate-50',
+                                    m.id === lead.assignedToId && 'bg-indigo-50 font-medium text-indigo-700'
+                                  )}
+                                >
+                                  <User className="h-3 w-3 shrink-0 text-slate-400" />
+                                  <span className="truncate">{m.firstName} {m.lastName}</span>
+                                  <span className="ml-auto text-[10px] text-text-secondary">{m.role === 'AGENCY_ADMIN' ? 'Admin' : 'Broker'}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-text-secondary">
+                        {lead.assignedTo
+                          ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
+                          : '—'}
+                      </span>
+                    )}
                   </td>
                   <td className="hidden px-4 py-3.5 text-text-secondary sm:table-cell">
                     {format(new Date(lead.createdAt), 'MMM d, yyyy')}
