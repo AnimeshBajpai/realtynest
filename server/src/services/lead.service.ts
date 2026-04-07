@@ -15,6 +15,36 @@ const userNameSelect = {
   email: true,
 } as const;
 
+/**
+ * Notify all relevant people about a lead change, excluding the user who made the change.
+ * Recipients: agency admins + assigned broker + lead creator (deduplicated, self excluded).
+ */
+async function notifyLeadStakeholders(
+  agencyId: string,
+  excludeUserId: string,
+  assignedToId: string | null,
+  createdById: string | null,
+  type: string,
+  message: string,
+  leadId: string,
+) {
+  const admins = await prisma.user.findMany({
+    where: { agencyId, role: 'AGENCY_ADMIN', isActive: true },
+    select: { id: true },
+  });
+
+  const recipientIds = new Set<string>();
+  for (const admin of admins) recipientIds.add(admin.id);
+  if (assignedToId) recipientIds.add(assignedToId);
+  if (createdById) recipientIds.add(createdById);
+  // Never notify the person who made the change
+  recipientIds.delete(excludeUserId);
+
+  for (const recipientId of recipientIds) {
+    await notifyUser(recipientId, type, message, undefined, `/leads/${leadId}`);
+  }
+}
+
 export const leadService = {
   async createLead(data: CreateLeadInput, agencyId: string, createdById: string) {
     const lead = await prisma.lead.create({
@@ -38,20 +68,13 @@ export const leadService = {
       },
     });
 
-    // Notify agency admins about new lead
-    const admins = await prisma.user.findMany({
-      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: createdById } },
-      select: { id: true },
-    });
-    for (const admin of admins) {
-      await notifyUser(
-        admin.id,
-        'LEAD_ASSIGNED',
-        `New lead created: ${data.firstName} ${data.lastName}`,
-        undefined,
-        `/leads/${lead.id}`,
-      );
-    }
+    // Notify stakeholders about new lead
+    await notifyLeadStakeholders(
+      agencyId, createdById, null, createdById,
+      'LEAD_ASSIGNED',
+      `New lead created: ${data.firstName} ${data.lastName}`,
+      lead.id,
+    );
 
     return lead;
   },
@@ -184,32 +207,13 @@ export const leadService = {
         })),
       });
 
-      // Notify agency admins about lead updates
-      const admins = await prisma.user.findMany({
-        where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
-        select: { id: true },
-      });
       const changedFields = activities.map((a) => a.action.replace('field_updated:', '')).join(', ');
-      for (const admin of admins) {
-        await notifyUser(
-          admin.id,
-          'STATUS_CHANGE',
-          `Lead ${existing.firstName} ${existing.lastName} updated: ${changedFields}`,
-          undefined,
-          `/leads/${id}`,
-        );
-      }
-
-      // Notify assigned broker about updates to their lead
-      if (existing.assignedToId && existing.assignedToId !== userId) {
-        await notifyUser(
-          existing.assignedToId,
-          'STATUS_CHANGE',
-          `Lead ${existing.firstName} ${existing.lastName} updated: ${changedFields}`,
-          undefined,
-          `/leads/${id}`,
-        );
-      }
+      await notifyLeadStakeholders(
+        agencyId, userId, existing.assignedToId, existing.createdById,
+        'STATUS_CHANGE',
+        `Lead ${existing.firstName} ${existing.lastName} updated: ${changedFields}`,
+        id,
+      );
     }
 
     return lead;
@@ -243,31 +247,13 @@ export const leadService = {
       },
     });
 
-    // Notify assigned broker about status change
-    if (existing.assignedToId && existing.assignedToId !== userId) {
-      await notifyUser(
-        existing.assignedToId,
-        'STATUS_CHANGE',
-        `Lead ${existing.firstName} ${existing.lastName} status changed to ${newStatus}`,
-        undefined,
-        `/leads/${id}`,
-      );
-    }
-
-    // Notify agency admin(s) when a broker changes status
-    const admins = await prisma.user.findMany({
-      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
-      select: { id: true },
-    });
-    for (const admin of admins) {
-      await notifyUser(
-        admin.id,
-        'STATUS_CHANGE',
-        `Lead ${existing.firstName} ${existing.lastName} status changed to ${newStatus}`,
-        undefined,
-        `/leads/${id}`,
-      );
-    }
+    // Notify all stakeholders about status change
+    await notifyLeadStakeholders(
+      agencyId, userId, existing.assignedToId, existing.createdById,
+      'STATUS_CHANGE',
+      `Lead ${existing.firstName} ${existing.lastName} status changed to ${newStatus}`,
+      id,
+    );
 
     return lead;
   },
@@ -312,33 +298,13 @@ export const leadService = {
       },
     });
 
-    // Notify the broker they've been assigned a lead
-    if (assignedToId !== userId) {
-      await notifyUser(
-        assignedToId,
-        'LEAD_ASSIGNED',
-        `Lead assigned: ${existing.firstName} ${existing.lastName}`,
-        undefined,
-        `/leads/${id}`,
-      );
-    }
-
-    // Notify agency admins about assignment change
-    const admins = await prisma.user.findMany({
-      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
-      select: { id: true },
-    });
-    for (const admin of admins) {
-      if (admin.id !== assignedToId) {
-        await notifyUser(
-          admin.id,
-          'LEAD_ASSIGNED',
-          `Lead ${existing.firstName} ${existing.lastName} assigned to ${targetUser.firstName} ${targetUser.lastName}`,
-          undefined,
-          `/leads/${id}`,
-        );
-      }
-    }
+    // Notify all stakeholders about assignment
+    await notifyLeadStakeholders(
+      agencyId, userId, assignedToId, existing.createdById,
+      'LEAD_ASSIGNED',
+      `Lead ${existing.firstName} ${existing.lastName} assigned to ${targetUser.firstName} ${targetUser.lastName}`,
+      id,
+    );
 
     return lead;
   },
