@@ -299,13 +299,14 @@ export default function TeamPage() {
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-text">
-                  Phone
+                  Phone <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
+                  required
                   value={form.phone}
                   onChange={update('phone')}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="9876543210"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-text placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>

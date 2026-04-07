@@ -6,7 +6,7 @@ export const createAgencySchema = z.object({
   adminPassword: z.string().min(8, 'Password must be at least 8 characters'),
   adminFirstName: z.string().min(1, 'First name is required'),
   adminLastName: z.string().min(1, 'Last name is required'),
-  adminPhone: z.string().optional(),
+  adminPhone: z.string().min(10, 'Phone number is required'),
 });
 
 export type CreateAgencyInput = z.infer<typeof createAgencySchema>;

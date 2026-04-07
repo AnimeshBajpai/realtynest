@@ -284,13 +284,16 @@ export default function AdminAgenciesPage() {
               </div>
 
               <div>
-                <label className={labelClass}>Admin Phone</label>
+                <label className={labelClass}>
+                  Admin Phone <span className="text-danger">*</span>
+                </label>
                 <input
                   type="tel"
+                  required
                   value={form.adminPhone}
                   onChange={(e) => set('adminPhone', e.target.value)}
                   className={inputClass}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="9876543210"
                 />
               </div>
 
