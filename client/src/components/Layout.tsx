@@ -14,6 +14,7 @@ import {
   X,
   ChevronDown,
   Clock,
+  Download,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
@@ -264,8 +265,26 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [installPrompt, setInstallPrompt] = useState<any>(null)
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+
+  // PWA install prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const result = await installPrompt.userChoice
+    if (result.outcome === 'accepted') setInstallPrompt(null)
+  }
 
   // Fetch unread notification count
   const fetchUnreadCount = useCallback(async () => {
@@ -399,6 +418,15 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-3">
+            {installPrompt && (
+              <button
+                onClick={handleInstall}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-primary-hover"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Install App
+              </button>
+            )}
             <button
               onClick={() => { navigate('/notifications'); fetchUnreadCount() }}
               className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100"
