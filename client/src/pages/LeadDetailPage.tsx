@@ -29,7 +29,7 @@ import { useAuthStore } from '../store/authStore'
 import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority, Lead, Communication, CommunicationType, Property } from '../types'
 import { generateWhatsAppLink } from '../lib/whatsapp'
-import BrandLoader, { ButtonLoader, PageLoader } from '../components/BrandLoader'
+import BrandLoader, { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -366,6 +366,11 @@ export default function LeadDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/* Action overlay — shows during any save/update/delete */}
+      {savingEdit && <ActionOverlay label="Saving changes..." />}
+      {changingStatus && <ActionOverlay label="Updating status..." />}
+      {deletingCommId && <ActionOverlay label="Deleting..." />}
+      {completingId && <ActionOverlay label="Completing follow-up..." />}
       {/* Breadcrumb */}
       <nav className="mb-4 flex items-center gap-2 text-sm text-text-secondary">
         <button

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Plus, Building2, Key, Copy, Check } from 'lucide-react'
 import { cn } from '../lib/utils'
 import api from '../lib/api'
-import { ButtonLoader, PageLoader } from '../components/BrandLoader'
+import { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
 
 interface AdminUser {
   id: string
@@ -150,6 +150,8 @@ export default function AdminAgenciesPage() {
 
   return (
     <div className="space-y-6">
+      {submitting && <ActionOverlay label="Creating agency..." />}
+      {resettingPassword && <ActionOverlay label="Resetting password..." />}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -21,7 +21,7 @@ import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority } from '../types'
 import CreateLeadModal from '../components/CreateLeadModal'
 import { generateWhatsAppLinkFromRow } from '../lib/whatsapp'
-import { ButtonLoader, PageLoader } from '../components/BrandLoader'
+import { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -232,6 +232,8 @@ export default function LeadsPage() {
 
   return (
     <div className={selectedLeads.size > 0 ? 'pb-24' : ''}>
+      {assigningLeadId && <ActionOverlay label="Assigning lead..." />}
+      {bulkLoading && <ActionOverlay label="Processing..." />}
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

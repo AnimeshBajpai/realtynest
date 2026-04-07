@@ -14,7 +14,7 @@ import {
   Link2,
   Unlink,
 } from 'lucide-react'
-import { ButtonLoader, PageLoader } from '../components/BrandLoader'
+import { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
 import { format } from 'date-fns'
 import { cn } from '../lib/utils'
 import { usePropertyStore } from '../store/propertyStore'
@@ -224,6 +224,10 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      {savingEdit && <ActionOverlay label="Saving changes..." />}
+      {deleting && <ActionOverlay label="Deleting property..." />}
+      {linking && <ActionOverlay label="Linking lead..." />}
+      {unlinkingId && <ActionOverlay label="Unlinking lead..." />}
       {/* Breadcrumb */}
       <nav className="mb-4 flex items-center gap-2 text-sm text-text-secondary">
         <button

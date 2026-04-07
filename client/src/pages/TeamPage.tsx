@@ -15,7 +15,7 @@ import {
 import api from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { User } from '../types'
-import { ButtonLoader, PageLoader } from '../components/BrandLoader'
+import { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
 
 interface BrokerForm {
   firstName: string
@@ -158,6 +158,9 @@ export default function TeamPage() {
 
   return (
     <div>
+      {submitting && <ActionOverlay label="Adding broker..." />}
+      {togglingId && <ActionOverlay label="Updating status..." />}
+      {resettingPassword && <ActionOverlay label="Resetting password..." />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text">Team</h1>
