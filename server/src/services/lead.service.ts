@@ -212,6 +212,21 @@ export const leadService = {
       );
     }
 
+    // Notify agency admin(s) when a broker changes status
+    const admins = await prisma.user.findMany({
+      where: { agencyId, role: 'AGENCY_ADMIN', isActive: true, id: { not: userId } },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      await notifyUser(
+        admin.id,
+        'STATUS_CHANGE',
+        `Lead ${existing.firstName} ${existing.lastName} status changed to ${newStatus}`,
+        undefined,
+        `/leads/${id}`,
+      );
+    }
+
     return lead;
   },
 
