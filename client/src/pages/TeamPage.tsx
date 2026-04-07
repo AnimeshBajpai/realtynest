@@ -89,7 +89,7 @@ export default function TeamPage() {
   const toggleBrokerStatus = async (broker: User) => {
     setTogglingId(broker.id)
     try {
-      await api.patch(`/users/${broker.id}`, { isActive: !broker.isActive })
+      await api.patch(`/users/${broker.id}/status`)
       setBrokers((prev) =>
         prev.map((b) =>
           b.id === broker.id ? { ...b, isActive: !b.isActive } : b
