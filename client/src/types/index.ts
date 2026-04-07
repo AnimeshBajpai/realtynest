@@ -7,6 +7,7 @@ export interface User {
   avatarUrl?: string
   role: 'SUPER_ADMIN' | 'AGENCY_ADMIN' | 'BROKER'
   agencyId?: string
+  agency?: { id: string; name: string }
   isActive: boolean
   lastLoginAt?: string
   createdAt: string

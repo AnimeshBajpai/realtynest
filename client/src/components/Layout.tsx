@@ -329,7 +329,7 @@ export default function Layout() {
             <Building2 className="h-5 w-5 text-white" />
           </div>
           {sidebarOpen && (
-            <span className="text-lg font-bold tracking-tight">RealtyNest</span>
+            <span className="text-lg font-bold tracking-tight">{user?.agency?.name ?? 'RealtyNest'}</span>
           )}
         </div>
 
