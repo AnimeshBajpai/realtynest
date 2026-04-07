@@ -9,7 +9,7 @@ interface AgencyRow {
   subscriptionPlan: string
   isActive: boolean
   createdAt: string
-  admin?: { email: string }
+  email?: string
 }
 
 interface CreateAgencyForm {
@@ -44,7 +44,7 @@ export default function AdminAgenciesPage() {
     setLoading(true)
     try {
       const res = await api.get('/admin/agencies')
-      setAgencies(res.data)
+      setAgencies(res.data.agencies)
     } catch {
       setError('Failed to load agencies')
     } finally {
@@ -160,7 +160,7 @@ export default function AdminAgenciesPage() {
                   <tr key={agency.id} className="transition-colors hover:bg-slate-50">
                     <td className="px-6 py-4 font-medium text-text">{agency.name}</td>
                     <td className="px-6 py-4 text-text-secondary">
-                      {agency.admin?.email ?? '—'}
+                      {agency.email ?? '—'}
                     </td>
                     <td className="px-6 py-4">
                       <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
