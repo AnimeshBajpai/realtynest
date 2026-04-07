@@ -10,8 +10,11 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.email('Invalid email address'),
+  email: z.email('Invalid email address').optional(),
+  phone: z.string().min(10, 'Invalid phone number').optional(),
   password: z.string().min(1, 'Password is required'),
+}).refine((data) => data.email || data.phone, {
+  message: 'Email or phone number is required',
 });
 
 export const createBrokerSchema = z.object({

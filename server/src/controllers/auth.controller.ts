@@ -38,7 +38,8 @@ export const authController = {
       throw new AppError(parsed.error.issues[0].message, 400);
     }
 
-    const result = await authService.login(parsed.data.email, parsed.data.password);
+    const { email, phone, password } = parsed.data;
+    const result = await authService.login({ email, phone }, password);
 
     res.cookie('refreshToken', result.refreshToken, REFRESH_COOKIE_OPTIONS);
 

@@ -12,7 +12,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  login: (email: string, password: string) => Promise<void>
+  login: (credentials: { email?: string; phone?: string; password: string }) => Promise<void>
   register: (data: {
     agencyName: string
     adminName: string
@@ -35,13 +35,10 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   isLoading: false,
   error: null,
 
-  login: async (email, password) => {
+  login: async (credentials) => {
     set({ isLoading: true, error: null })
     try {
-      const { data } = await api.post<AuthResponse>('/auth/login', {
-        email,
-        password,
-      })
+      const { data } = await api.post<AuthResponse>('/auth/login', credentials)
       localStorage.setItem('token', data.token)
       set({
         user: data.user,

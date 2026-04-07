@@ -65,13 +65,13 @@ export const authService = {
     };
   },
 
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+  async login(identifier: { email?: string; phone?: string }, password: string) {
+    const user = identifier.email
+      ? await prisma.user.findUnique({ where: { email: identifier.email } })
+      : await prisma.user.findFirst({ where: { phone: identifier.phone } });
 
     if (!user) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError('Invalid credentials', 401);
     }
 
     if (!user.isActive) {
@@ -81,7 +81,7 @@ export const authService = {
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValidPassword) {
-      throw new AppError('Invalid email or password', 401);
+      throw new AppError('Invalid credentials', 401);
     }
 
     await prisma.user.update({

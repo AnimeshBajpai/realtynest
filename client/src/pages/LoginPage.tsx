@@ -1,10 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
-import { Building2, Loader2, Mail, Lock } from 'lucide-react'
+import { Building2, Loader2, User, Lock } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const { login, isLoading, isAuthenticated, clearError } = useAuthStore()
@@ -18,11 +18,17 @@ export default function LoginPage() {
     return <Navigate to="/dashboard" replace />
   }
 
+  const isPhone = (val: string) => /^\+?\d[\d\s-]{8,}$/.test(val.trim())
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     try {
-      await login(email, password)
+      const trimmed = identifier.trim()
+      const payload = isPhone(trimmed)
+        ? { phone: trimmed.replace(/[\s-]/g, ''), password }
+        : { email: trimmed, password }
+      await login(payload)
       navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
@@ -56,20 +62,20 @@ export default function LoginPage() {
 
             <div>
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="mb-1.5 block text-sm font-medium text-slate-700"
               >
-                Email
+                Email or Phone
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
-                  id="email"
-                  type="email"
+                  id="identifier"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="you@company.com or 9876543210"
                   className="w-full rounded-lg border border-slate-300 py-2.5 pl-10 pr-3.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
