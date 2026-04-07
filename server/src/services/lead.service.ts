@@ -490,7 +490,7 @@ export const leadService = {
     const orConditions: Prisma.PropertyWhereInput[] = [];
 
     if (lead.budgetMin != null || lead.budgetMax != null) {
-      const priceFilter: Prisma.FloatNullableFilter = {};
+      const priceFilter: Record<string, number> = {};
       if (lead.budgetMin != null) priceFilter.gte = lead.budgetMin;
       if (lead.budgetMax != null) priceFilter.lte = lead.budgetMax;
       orConditions.push({ price: priceFilter });
@@ -499,8 +499,8 @@ export const leadService = {
     if (lead.preferredLocation) {
       orConditions.push({
         OR: [
-          { city: { contains: lead.preferredLocation, mode: 'insensitive' } },
-          { state: { contains: lead.preferredLocation, mode: 'insensitive' } },
+          { city: { contains: lead.preferredLocation, mode: 'insensitive' as const } },
+          { state: { contains: lead.preferredLocation, mode: 'insensitive' as const } },
         ],
       });
     }
