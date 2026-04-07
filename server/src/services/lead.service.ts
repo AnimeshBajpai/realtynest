@@ -549,7 +549,7 @@ export const leadService = {
 
       if (
         lead.propertyTypePreference &&
-        property.type === lead.propertyTypePreference
+        property.type.toUpperCase() === lead.propertyTypePreference.toUpperCase()
       ) {
         matchScore++;
         matches.type = true;
