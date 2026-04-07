@@ -13,6 +13,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    const agencyContextId = localStorage.getItem('agencyContextId')
+    if (agencyContextId) {
+      config.headers['X-Agency-Context'] = agencyContextId
+    }
     return config
   },
   (error) => Promise.reject(error)

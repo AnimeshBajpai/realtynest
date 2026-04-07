@@ -38,6 +38,15 @@ export const authenticateToken = (
   try {
     const decoded = jwt.verify(finalToken, config.jwtSecret) as JwtPayload;
     req.user = decoded;
+
+    // Super Admin can impersonate an agency via header
+    if (decoded.role === 'SUPER_ADMIN') {
+      const contextAgencyId = req.headers['x-agency-context'] as string | undefined;
+      if (contextAgencyId) {
+        req.user = { ...decoded, agencyId: contextAgencyId };
+      }
+    }
+
     next();
   } catch {
     throw new AppError('Invalid or expired token', 401);

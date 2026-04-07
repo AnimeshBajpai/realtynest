@@ -12,9 +12,11 @@ import {
   Landmark,
   Search,
   X,
+  ChevronDown,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuthStore } from '../store/authStore'
+import { useAgencyContextStore } from '../store/agencyContextStore'
 import api from '../lib/api'
 
 interface NavItem {
@@ -172,6 +174,91 @@ function GlobalSearch() {
   )
 }
 
+function AgencySwitcher() {
+  const { agencies, selectedAgencyId, selectedAgencyName, loading, fetchAgencies, setAgency } =
+    useAgencyContextStore()
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetchAgencies()
+  }, [fetchAgencies])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSelect = (id: string | null, name?: string) => {
+    setAgency(id, name ?? null)
+    setOpen(false)
+    window.location.reload()
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={cn(
+          'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+          selectedAgencyId
+            ? 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+            : 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
+        )}
+      >
+        <Landmark className="h-3.5 w-3.5" />
+        <span className="max-w-32 truncate">
+          {selectedAgencyName || 'Select Agency'}
+        </span>
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : (
+            <div className="max-h-60 overflow-y-auto py-1">
+              {selectedAgencyId && (
+                <button
+                  onClick={() => handleSelect(null)}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-amber-600 transition-colors hover:bg-amber-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear context
+                </button>
+              )}
+              {agencies.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => handleSelect(a.id, a.name)}
+                  className={cn(
+                    'flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                    a.id === selectedAgencyId
+                      ? 'bg-indigo-50 font-medium text-indigo-700'
+                      : 'text-text'
+                  )}
+                >
+                  <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <span className="truncate">{a.name}</span>
+                </button>
+              ))}
+              {agencies.length === 0 && (
+                <p className="px-4 py-3 text-center text-sm text-text-secondary">No agencies found</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -306,6 +393,7 @@ export default function Layout() {
               <Menu className="h-5 w-5" />
             </button>
             <GlobalSearch />
+            {user?.role === 'SUPER_ADMIN' && <AgencySwitcher />}
           </div>
 
           <div className="flex items-center gap-3">
