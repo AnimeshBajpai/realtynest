@@ -5,11 +5,11 @@ import {
   Phone,
   MapPin,
   Home,
-  DollarSign,
   Loader2,
   Pencil,
   Clock,
   User,
+  UserPlus,
   X,
   Check,
   Plus,
@@ -73,7 +73,7 @@ const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5'
 function formatBudget(min?: number, max?: number) {
   if (!min && !max) return null
   const fmt = (n: number) =>
-    n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+    n.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })
   if (min && max) return `${fmt(min)} – ${fmt(max)}`
   if (min) return `From ${fmt(min)}`
   return `Up to ${fmt(max!)}`
@@ -92,12 +92,16 @@ export default function LeadDetailPage() {
     fetchTimeline,
     updateLead,
     updateLeadStatus,
+    assignLead,
     clearSelectedLead,
   } = useLeadStore()
 
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState<Partial<Lead>>({})
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false)
+  const [assignDropdownOpen, setAssignDropdownOpen] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([])
+  const [assigning, setAssigning] = useState(false)
 
   // Communications state
   const [communications, setCommunications] = useState<Communication[]>([])
@@ -133,8 +137,27 @@ export default function LeadDetailPage() {
       fetchTimeline(id)
       fetchCommunications(id)
     }
+    if (isAdmin) {
+      api.get('/users').then(({ data }) => {
+        const users = Array.isArray(data) ? data : data.users ?? []
+        setTeamMembers(users)
+      }).catch(() => {})
+    }
     return () => clearSelectedLead()
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAssign = async (assignedToId: string) => {
+    if (!id) return
+    setAssigning(true)
+    try {
+      await assignLead(id, assignedToId)
+      setAssignDropdownOpen(false)
+      fetchLead(id)
+      fetchTimeline(id)
+    } finally {
+      setAssigning(false)
+    }
+  }
 
   const handleCreateComm = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -374,7 +397,7 @@ export default function LeadDetailPage() {
               {budget && (
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-amber-50 p-2">
-                    <DollarSign className="h-4 w-4 text-amber-600" />
+                    <span className="text-base font-bold text-amber-600">₹</span>
                   </div>
                   <div>
                     <p className="text-xs text-text-secondary">Budget</p>
@@ -589,17 +612,56 @@ export default function LeadDetailPage() {
                 <dt className="text-text-secondary">Source</dt>
                 <dd className="mt-0.5 font-medium text-text">{sourceLabel}</dd>
               </div>
-              {lead.assignedTo && (
-                <div>
-                  <dt className="text-text-secondary">Assigned To</dt>
-                  <dd className="mt-0.5 flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-text-secondary" />
-                    <span className="font-medium text-text">
+              <div>
+                <dt className="text-text-secondary">Assigned To</dt>
+                <dd className="mt-0.5">
+                  {isAdmin ? (
+                    <div className="relative">
+                      <button
+                        onClick={() => setAssignDropdownOpen(!assignDropdownOpen)}
+                        disabled={assigning}
+                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm font-medium text-text transition-colors hover:bg-slate-50"
+                      >
+                        {assigning ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <UserPlus className="h-3.5 w-3.5 text-text-secondary" />
+                        )}
+                        {lead.assignedTo
+                          ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
+                          : 'Assign'}
+                      </button>
+                      {assignDropdownOpen && (
+                        <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+                          <div className="max-h-48 overflow-y-auto py-1">
+                            {teamMembers.map((m) => (
+                              <button
+                                key={m.id}
+                                onClick={() => handleAssign(m.id)}
+                                className={cn(
+                                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50',
+                                  m.id === lead.assignedToId && 'bg-indigo-50 font-medium text-indigo-700'
+                                )}
+                              >
+                                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                                <span className="truncate">{m.firstName} {m.lastName}</span>
+                                <span className="ml-auto text-[10px] text-text-secondary">{m.role === 'AGENCY_ADMIN' ? 'Admin' : 'Broker'}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : lead.assignedTo ? (
+                    <span className="flex items-center gap-1.5 font-medium text-text">
+                      <User className="h-3.5 w-3.5 text-text-secondary" />
                       {lead.assignedTo.firstName} {lead.assignedTo.lastName}
                     </span>
-                  </dd>
-                </div>
-              )}
+                  ) : (
+                    <span className="text-text-secondary">Unassigned</span>
+                  )}
+                </dd>
+              </div>
               {lead.createdBy && (
                 <div>
                   <dt className="text-text-secondary">Created By</dt>
