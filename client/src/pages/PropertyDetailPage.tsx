@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import AutocompleteInput from '../components/AutocompleteInput'
+import PlacesAutocomplete from '../components/PlacesAutocomplete'
+import { INDIAN_STATES, ALL_CITIES, getCitiesForState } from '../data/indianLocations'
 import {
   Pencil,
   Trash2,
@@ -559,30 +562,38 @@ export default function PropertyDetailPage() {
               </div>
               <div>
                 <label className={labelClass}>Address</label>
-                <input
-                  type="text"
-                  value={(editForm.address as string) ?? ''}
-                  onChange={(e) => setEditForm((p) => ({ ...p, address: e.target.value }))}
-                  className={inputClass}
+                <PlacesAutocomplete
+                  value={editForm.address ?? ''}
+                  onChange={(v) => setEditForm(prev => ({ ...prev, address: v }))}
+                  onPlaceSelect={(place) => {
+                    setEditForm(prev => ({
+                      ...prev,
+                      address: place.address,
+                      city: place.city,
+                      state: place.state,
+                      zip: place.zip,
+                    }))
+                  }}
+                  placeholder="Start typing an address..."
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className={labelClass}>City</label>
-                  <input
-                    type="text"
-                    value={(editForm.city as string) ?? ''}
-                    onChange={(e) => setEditForm((p) => ({ ...p, city: e.target.value }))}
-                    className={inputClass}
+                  <AutocompleteInput
+                    value={editForm.city ?? ''}
+                    onChange={(v) => setEditForm(prev => ({ ...prev, city: v }))}
+                    items={editForm.state ? getCitiesForState(editForm.state as string) : ALL_CITIES}
+                    placeholder="City"
                   />
                 </div>
                 <div>
                   <label className={labelClass}>State</label>
-                  <input
-                    type="text"
-                    value={(editForm.state as string) ?? ''}
-                    onChange={(e) => setEditForm((p) => ({ ...p, state: e.target.value }))}
-                    className={inputClass}
+                  <AutocompleteInput
+                    value={editForm.state ?? ''}
+                    onChange={(v) => setEditForm(prev => ({ ...prev, state: v }))}
+                    items={[...INDIAN_STATES]}
+                    placeholder="State"
                   />
                 </div>
                 <div>

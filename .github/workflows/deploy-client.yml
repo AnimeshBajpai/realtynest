@@ -32,6 +32,7 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://realtynest-api.azurewebsites.net/api
+          VITE_GOOGLE_PLACES_API_KEY: ${{ secrets.VITE_GOOGLE_PLACES_API_KEY }}
 
       - name: Prepare deployment package
         working-directory: ./client/dist

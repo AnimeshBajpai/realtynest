@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { X, Loader2, AlertTriangle } from 'lucide-react'
+import { X, AlertTriangle } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useLeadStore } from '../store/leadStore'
 import api from '../lib/api'
 import type { LeadSource, LeadPriority } from '../types'
+import AutocompleteInput from './AutocompleteInput'
+import { ALL_CITIES } from '../data/indianLocations'
+import { ButtonLoader } from './BrandLoader'
 
 interface Props {
   open: boolean
@@ -288,23 +291,26 @@ export default function CreateLeadModal({ open, onClose }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Preferred Location</label>
-              <input
-                type="text"
+              <AutocompleteInput
                 value={form.preferredLocation}
-                onChange={(e) => set('preferredLocation', e.target.value)}
-                className={inputClass}
-                placeholder="e.g. Downtown"
+                onChange={(v) => set('preferredLocation', v)}
+                items={ALL_CITIES}
+                placeholder="e.g. Noida, Mumbai"
               />
             </div>
             <div>
               <label className={labelClass}>Property Type</label>
-              <input
-                type="text"
+              <select
                 value={form.propertyTypePreference}
                 onChange={(e) => set('propertyTypePreference', e.target.value)}
                 className={inputClass}
-                placeholder="e.g. Apartment"
-              />
+              >
+                <option value="">Select type</option>
+                <option value="Apartment">Apartment</option>
+                <option value="Villa">Villa</option>
+                <option value="Plot">Plot</option>
+                <option value="Commercial">Commercial</option>
+              </select>
             </div>
           </div>
 
@@ -334,7 +340,7 @@ export default function CreateLeadModal({ open, onClose }: Props) {
               disabled={submitting}
               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
             >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting && <ButtonLoader />}
               Create Lead
             </button>
           </div>

@@ -30,6 +30,8 @@ import api from '../lib/api'
 import type { LeadStatus, LeadSource, LeadPriority, Lead, Communication, CommunicationType, Property } from '../types'
 import { generateWhatsAppLink } from '../lib/whatsapp'
 import BrandLoader, { ButtonLoader, PageLoader, ActionOverlay } from '../components/BrandLoader'
+import AutocompleteInput from '../components/AutocompleteInput'
+import { ALL_CITIES } from '../data/indianLocations'
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: 'NEW', label: 'New' },
@@ -1067,28 +1069,28 @@ export default function LeadDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Preferred Location</label>
-                  <input
-                    type="text"
+                  <AutocompleteInput
                     value={(editForm.preferredLocation as string) ?? ''}
-                    onChange={(e) =>
-                      setEditForm((p) => ({ ...p, preferredLocation: e.target.value }))
-                    }
-                    className={inputClass}
+                    onChange={(v) => setEditForm((prev) => ({ ...prev, preferredLocation: v }))}
+                    items={ALL_CITIES}
+                    placeholder="e.g. Noida, Mumbai"
                   />
                 </div>
                 <div>
                   <label className={labelClass}>Property Type</label>
-                  <input
-                    type="text"
+                  <select
                     value={(editForm.propertyTypePreference as string) ?? ''}
                     onChange={(e) =>
-                      setEditForm((p) => ({
-                        ...p,
-                        propertyTypePreference: e.target.value,
-                      }))
+                      setEditForm((prev) => ({ ...prev, propertyTypePreference: e.target.value }))
                     }
                     className={inputClass}
-                  />
+                  >
+                    <option value="">Select type</option>
+                    <option value="Apartment">Apartment</option>
+                    <option value="Villa">Villa</option>
+                    <option value="Plot">Plot</option>
+                    <option value="Commercial">Commercial</option>
+                  </select>
                 </div>
               </div>
               <div>

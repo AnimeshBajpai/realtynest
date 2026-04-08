@@ -4,6 +4,9 @@ import { cn } from '../lib/utils'
 import { usePropertyStore } from '../store/propertyStore'
 import type { PropertyType, PropertyStatus } from '../types'
 import { ButtonLoader } from './BrandLoader'
+import AutocompleteInput from './AutocompleteInput'
+import PlacesAutocomplete from './PlacesAutocomplete'
+import { INDIAN_STATES, ALL_CITIES, getCitiesForState } from '../data/indianLocations'
 
 interface Props {
   open: boolean
@@ -170,12 +173,19 @@ export default function CreatePropertyModal({ open, onClose }: Props) {
           {/* Address */}
           <div>
             <label className={labelClass}>Address</label>
-            <input
-              type="text"
+            <PlacesAutocomplete
               value={form.address}
-              onChange={(e) => set('address', e.target.value)}
-              className={inputClass}
-              placeholder="Full street address"
+              onChange={(v) => set('address', v)}
+              onPlaceSelect={(place) => {
+                setForm(prev => ({
+                  ...prev,
+                  address: place.address,
+                  city: place.city,
+                  state: place.state,
+                  zip: place.zip,
+                }))
+              }}
+              placeholder="Start typing an address..."
             />
           </div>
 
@@ -183,21 +193,19 @@ export default function CreatePropertyModal({ open, onClose }: Props) {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>City</label>
-              <input
-                type="text"
+              <AutocompleteInput
                 value={form.city}
-                onChange={(e) => set('city', e.target.value)}
-                className={inputClass}
+                onChange={(v) => set('city', v)}
+                items={form.state ? getCitiesForState(form.state) : ALL_CITIES}
                 placeholder="City"
               />
             </div>
             <div>
               <label className={labelClass}>State</label>
-              <input
-                type="text"
+              <AutocompleteInput
                 value={form.state}
-                onChange={(e) => set('state', e.target.value)}
-                className={inputClass}
+                onChange={(v) => set('state', v)}
+                items={[...INDIAN_STATES]}
                 placeholder="State"
               />
             </div>
