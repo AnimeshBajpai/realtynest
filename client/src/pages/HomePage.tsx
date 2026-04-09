@@ -12,7 +12,6 @@ import {
   CheckCircle,
   Menu,
   X,
-  Star,
   Play,
   ArrowRight,
   ChevronRight,
@@ -81,7 +80,6 @@ function Navbar() {
   const navLinks = [
     { label: 'Features', id: 'features' },
     { label: 'How It Works', id: 'how-it-works' },
-    { label: 'Testimonials', id: 'testimonials' },
   ]
 
   return (
@@ -365,8 +363,6 @@ function Hero() {
 /* ------------------------------------------------------------------ */
 function StatsBar() {
   const stats = [
-    { label: 'Agencies', end: 500, suffix: '+' },
-    { label: 'Leads Managed', end: 50000, suffix: '+' },
     { label: 'Satisfaction', end: 98, suffix: '%' },
     { label: 'Support', end: 24, suffix: '/7' },
   ]
@@ -651,95 +647,6 @@ function DashboardPreview() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Testimonials                                                       */
-/* ------------------------------------------------------------------ */
-const testimonials = [
-  {
-    quote:
-      'RealtyNest transformed our lead management. We went from chaotic spreadsheets to a streamlined pipeline that actually works. Our conversion rate increased by 35% in just two months.',
-    name: 'Sarah Mitchell',
-    role: 'Broker, Apex Realty',
-    initials: 'SM',
-    accent: false,
-  },
-  {
-    quote:
-      'The automation features are incredible. Follow-ups happen on schedule, my team stays accountable, and I can finally focus on strategy instead of micromanaging. Best investment we made.',
-    name: 'James Rodriguez',
-    role: 'CEO, Horizon Properties',
-    initials: 'JR',
-    accent: true,
-  },
-  {
-    quote:
-      'We manage over 10,000 leads across three offices. RealtyNest handles it effortlessly. The multi-agency support and analytics dashboard give us visibility we never had before.',
-    name: 'Priya Sharma',
-    role: 'Director, NestWell Group',
-    initials: 'PS',
-    accent: false,
-  },
-]
-
-function Testimonials() {
-  return (
-    <section id="testimonials" className="bg-surface py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-block rounded-full bg-primary-light px-4 py-1.5 text-xs font-semibold tracking-wide text-primary uppercase">
-            Testimonials
-          </span>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-text sm:text-4xl">
-            Loved by Agencies Everywhere
-          </h2>
-          <p className="mt-4 text-lg text-text-secondary">
-            Don't take our word for it — here's what real estate professionals say about RealtyNest.
-          </p>
-        </div>
-
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <div
-              key={t.name}
-              className={cn(
-                'rounded-2xl border p-6 transition-shadow hover:shadow-lg',
-                t.accent
-                  ? 'border-indigo-100 bg-indigo-50'
-                  : 'border-border bg-surface',
-              )}
-            >
-              {/* Stars */}
-              <div className="mb-4 flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className="h-4 w-4 fill-amber-400 text-amber-400"
-                  />
-                ))}
-              </div>
-              <p className="leading-relaxed text-text-secondary">"{t.quote}"</p>
-              <div className="mt-6 flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white',
-                    t.accent ? 'bg-indigo-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600',
-                  )}
-                >
-                  {t.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text">{t.name}</p>
-                  <p className="text-xs text-text-muted">{t.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 /*  CTA Banner                                                         */
 /* ------------------------------------------------------------------ */
 function CtaBanner() {
@@ -755,7 +662,7 @@ function CtaBanner() {
           Ready to Transform Your Real Estate Business?
         </h2>
         <p className="mt-6 text-lg text-slate-300">
-          Join 500+ agencies already using RealtyNest to streamline their lead management. Start
+          Streamline your lead management with RealtyNest. Start
           your free trial today — no credit card required.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -766,7 +673,10 @@ function CtaBanner() {
             Get Started Free
             <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
-          <button className="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-8 py-4 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-500 hover:text-white">
+          <button
+            onClick={() => window.open('mailto:animesh.bajpai12@gmail.com')}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-600 px-8 py-4 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+          >
             <Mail className="h-4 w-4" />
             Contact Sales
           </button>
@@ -802,6 +712,18 @@ function Footer() {
             <p className="mt-4 text-sm leading-relaxed text-slate-400">
               The modern lead management platform built for real estate professionals.
             </p>
+            <div className="mt-4 space-y-1.5 text-sm text-slate-400">
+              <p>
+                <a href="mailto:animesh.bajpai12@gmail.com" className="transition-colors hover:text-white">
+                  ✉ animesh.bajpai12@gmail.com
+                </a>
+              </p>
+              <p>
+                <a href="tel:+919620115459" className="transition-colors hover:text-white">
+                  ☎ +91 96201 15459
+                </a>
+              </p>
+            </div>
             <div className="mt-6 flex gap-3">
               {[Globe, MessageSquare, Share2].map((Icon, i) => (
                 <a
@@ -898,7 +820,6 @@ export default function HomePage() {
       <Features />
       <HowItWorks />
       <DashboardPreview />
-      <Testimonials />
       <CtaBanner />
       <Footer />
     </div>
