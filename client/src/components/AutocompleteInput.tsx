@@ -40,7 +40,7 @@ export default function AutocompleteInput({
   const [activeIndex, setActiveIndex] = useState(-1)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
-  const justSelectedRef = useRef(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const filtered = useMemo(() => {
     if (!value) return items.slice(0, MAX_VISIBLE)
@@ -69,11 +69,12 @@ export default function AutocompleteInput({
 
   const selectItem = useCallback(
     (item: string) => {
-      justSelectedRef.current = true
       onChange(item)
       setOpen(false)
       setActiveIndex(-1)
-      setTimeout(() => { justSelectedRef.current = false }, 150)
+      // Blur then re-focus to kill any pending focus events
+      inputRef.current?.blur()
+      requestAnimationFrame(() => inputRef.current?.focus())
     },
     [onChange],
   )
@@ -102,6 +103,8 @@ export default function AutocompleteInput({
           e.preventDefault()
           if (activeIndex >= 0 && activeIndex < filtered.length) {
             selectItem(filtered[activeIndex])
+          } else {
+            setOpen(false)
           }
           break
         case 'Escape':
@@ -113,9 +116,14 @@ export default function AutocompleteInput({
     [open, filtered, activeIndex, selectItem],
   )
 
+  // Don't show dropdown if value exactly matches a single result (already selected)
+  const shouldShowDropdown = open && filtered.length > 0 &&
+    !(filtered.length === 1 && filtered[0] === value)
+
   return (
     <div ref={wrapperRef} className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={value}
         disabled={disabled}
@@ -126,11 +134,10 @@ export default function AutocompleteInput({
           setOpen(true)
           setActiveIndex(-1)
         }}
-        onFocus={() => { if (!justSelectedRef.current) setOpen(true) }}
         onKeyDown={handleKeyDown}
       />
 
-      {open && filtered.length > 0 && (
+      {shouldShowDropdown && (
         <ul
           ref={listRef}
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
@@ -144,7 +151,7 @@ export default function AutocompleteInput({
               )}
               onMouseEnter={() => setActiveIndex(i)}
               onMouseDown={(e) => {
-                e.preventDefault() // prevent input blur
+                e.preventDefault()
                 selectItem(item)
               }}
             >
@@ -153,6 +160,8 @@ export default function AutocompleteInput({
           ))}
         </ul>
       )}
+    </div>
+  )
     </div>
   )
 }
