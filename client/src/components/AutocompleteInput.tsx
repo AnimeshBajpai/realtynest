@@ -162,6 +162,4 @@ export default function AutocompleteInput({
       )}
     </div>
   )
-    </div>
-  )
 }
