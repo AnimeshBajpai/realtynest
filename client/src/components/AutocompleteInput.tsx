@@ -13,7 +13,7 @@ interface AutocompleteInputProps {
 const inputClass =
   'block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-text placeholder:text-slate-400 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
 
-const MAX_VISIBLE = 8
+const MAX_VISIBLE = 20
 
 function highlightMatch(text: string, query: string) {
   if (!query) return text
