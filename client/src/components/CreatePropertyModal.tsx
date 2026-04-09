@@ -189,8 +189,20 @@ export default function CreatePropertyModal({ open, onClose }: Props) {
             />
           </div>
 
-          {/* City, State, Zip */}
+          {/* State, City, Zip */}
           <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>State</label>
+              <AutocompleteInput
+                value={form.state}
+                onChange={(v) => {
+                  setForm(prev => ({ ...prev, state: v, city: '' }))
+                  setValidationErrors(prev => { const n = { ...prev }; delete n.state; return n })
+                }}
+                items={[...INDIAN_STATES]}
+                placeholder="State"
+              />
+            </div>
             <div>
               <label className={labelClass}>City</label>
               <AutocompleteInput
@@ -198,15 +210,6 @@ export default function CreatePropertyModal({ open, onClose }: Props) {
                 onChange={(v) => set('city', v)}
                 items={form.state ? getCitiesForState(form.state) : ALL_CITIES}
                 placeholder="City"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>State</label>
-              <AutocompleteInput
-                value={form.state}
-                onChange={(v) => set('state', v)}
-                items={[...INDIAN_STATES]}
-                placeholder="State"
               />
             </div>
             <div>

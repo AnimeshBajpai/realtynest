@@ -579,21 +579,21 @@ export default function PropertyDetailPage() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
+                  <label className={labelClass}>State</label>
+                  <AutocompleteInput
+                    value={editForm.state ?? ''}
+                    onChange={(v) => setEditForm(prev => ({ ...prev, state: v, city: '' }))}
+                    items={[...INDIAN_STATES]}
+                    placeholder="State"
+                  />
+                </div>
+                <div>
                   <label className={labelClass}>City</label>
                   <AutocompleteInput
                     value={editForm.city ?? ''}
                     onChange={(v) => setEditForm(prev => ({ ...prev, city: v }))}
                     items={editForm.state ? getCitiesForState(editForm.state as string) : ALL_CITIES}
                     placeholder="City"
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>State</label>
-                  <AutocompleteInput
-                    value={editForm.state ?? ''}
-                    onChange={(v) => setEditForm(prev => ({ ...prev, state: v }))}
-                    items={[...INDIAN_STATES]}
-                    placeholder="State"
                   />
                 </div>
                 <div>

@@ -40,6 +40,7 @@ export default function AutocompleteInput({
   const [activeIndex, setActiveIndex] = useState(-1)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const justSelectedRef = useRef(false)
 
   const filtered = useMemo(() => {
     if (!value) return items.slice(0, MAX_VISIBLE)
@@ -68,9 +69,11 @@ export default function AutocompleteInput({
 
   const selectItem = useCallback(
     (item: string) => {
+      justSelectedRef.current = true
       onChange(item)
       setOpen(false)
       setActiveIndex(-1)
+      setTimeout(() => { justSelectedRef.current = false }, 150)
     },
     [onChange],
   )
@@ -123,7 +126,7 @@ export default function AutocompleteInput({
           setOpen(true)
           setActiveIndex(-1)
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => { if (!justSelectedRef.current) setOpen(true) }}
         onKeyDown={handleKeyDown}
       />
 
