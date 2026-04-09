@@ -126,11 +126,12 @@ export default function PlacesAutocomplete({
   const [loading, setLoading] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const justSelectedRef = useRef(false)
   const debouncedValue = useDebounce(value, DEBOUNCE_MS)
 
   // Fetch suggestions when debounced value changes
   useEffect(() => {
-    if (!HAS_API || debouncedValue.length < MIN_CHARS) {
+    if (!HAS_API || debouncedValue.length < MIN_CHARS || justSelectedRef.current) {
       setSuggestions([])
       return
     }
@@ -172,9 +173,12 @@ export default function PlacesAutocomplete({
 
   const selectSuggestion = useCallback(
     async (suggestion: Suggestion) => {
+      justSelectedRef.current = true
       onChange(suggestion.text)
       setOpen(false)
       setActiveIndex(-1)
+      setSuggestions([])
+      setTimeout(() => { justSelectedRef.current = false }, 200)
 
       if (onPlaceSelect && API_KEY) {
         const details = await fetchPlaceDetails(suggestion.placeId, API_KEY)
@@ -248,7 +252,7 @@ export default function PlacesAutocomplete({
           setActiveIndex(-1)
         }}
         onFocus={() => {
-          if (suggestions.length > 0) setOpen(true)
+          if (!justSelectedRef.current && suggestions.length > 0) setOpen(true)
         }}
         onKeyDown={handleKeyDown}
       />
