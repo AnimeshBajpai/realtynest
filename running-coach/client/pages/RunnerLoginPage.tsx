@@ -46,25 +46,41 @@ function RunnerHero() {
       <div className="absolute w-32 h-32 rounded-full border border-[#00FF88]/15" style={{ animation: 'pulse-ring 3s ease-out 1s infinite' }} />
       <div className="absolute w-32 h-32 rounded-full border border-[#00FF88]/10" style={{ animation: 'pulse-ring 3s ease-out 2s infinite' }} />
 
-      {/* Runner SVG silhouette */}
+      {/* Neon-outlined runner */}
       <div style={{ animation: 'runner-breathe 3s ease-in-out infinite' }}>
         <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Head */}
-          <circle cx="68" cy="22" r="10" fill="#00FF88" />
-          {/* Body */}
-          <path
-            d="M60 32 L65 35 L72 50 L68 65 L75 82 L72 85 L64 68 L58 85 L55 83 L60 65 L55 50 L48 55 L45 52 L58 38 Z"
-            fill="#00FF88"
-            opacity="0.9"
-          />
-          {/* Front arm */}
-          <path d="M65 38 L80 48 L78 51 L62 42" fill="#00FF88" opacity="0.8" />
-          {/* Back arm */}
-          <path d="M60 38 L42 44 L43 47 L58 42" fill="#00FF88" opacity="0.7" />
-          {/* Front leg extended */}
-          <path d="M72 82 L88 95 L85 98 L70 86" fill="#00FF88" opacity="0.8" />
-          {/* Back leg */}
-          <path d="M58 82 L42 92 L44 95 L60 86" fill="#00FF88" opacity="0.7" />
+          <defs>
+            <linearGradient id="neonGrad" x1="30" y1="10" x2="90" y2="110" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#00FF88" />
+              <stop offset="100%" stopColor="#00D4FF" />
+            </linearGradient>
+            <filter id="neonGlow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <g filter="url(#neonGlow)">
+            {/* Head */}
+            <circle cx="70" cy="16" r="8" fill="url(#neonGrad)" />
+            {/* Body - full running silhouette as single filled shape */}
+            <path
+              d="M68 24 C68 24 72 24 73 26 L76 34 L82 28 L86 18 L90 19 L84 32 L78 38 L74 38
+                 L70 48 L68 56
+                 L76 64 L88 70 L92 68 L96 70 L92 74 L86 74 L68 60
+                 L64 68 L56 80 L50 86 L46 84 L56 74 L62 62
+                 L60 56 L56 38 L48 44 L40 54 L36 52 L46 40 L56 32
+                 L64 26 Z"
+              fill="url(#neonGrad)"
+              opacity="0.9"
+            />
+            {/* Speed lines */}
+            <line x1="30" y1="32" x2="16" y2="32" stroke="#00FF88" strokeWidth="2.5" opacity="0.5" strokeLinecap="round" />
+            <line x1="26" y1="44" x2="10" y2="44" stroke="#00FF88" strokeWidth="2.5" opacity="0.35" strokeLinecap="round" />
+            <line x1="28" y1="56" x2="14" y2="56" stroke="#00FF88" strokeWidth="2" opacity="0.2" strokeLinecap="round" />
+          </g>
         </svg>
       </div>
     </div>
