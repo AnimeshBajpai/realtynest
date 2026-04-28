@@ -17,6 +17,7 @@ import AdminAgenciesPage from './pages/AdminAgenciesPage'
 import HomePage from './pages/HomePage'
 import { useAuthStore } from './store/authStore'
 import { Loader2 } from 'lucide-react'
+import RunningCoachApp from '../../running-coach/client/RunningCoachApp'
 
 function AppWrapper() {
   const { token, isLoading, getMe, user } = useAuthStore()
@@ -57,6 +58,9 @@ function AppWrapper() {
           <Route path="/admin/agencies" element={<AdminAgenciesPage />} />
         </Route>
       </Route>
+
+      {/* Running Coach App (separate module) */}
+      <Route path="/runningCoach/*" element={<RunningCoachApp />} />
 
       {/* Public landing page */}
       <Route path="/" element={<HomePage />} />

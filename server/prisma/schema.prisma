@@ -254,3 +254,194 @@ model LeadActivity {
   @@index([userId])
   @@index([createdAt])
 }
+
+// ─── Running Coach Enums ─────────────────────────────────
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+}
+
+enum GoalType {
+  FIVE_K
+  TEN_K
+  HALF_MARATHON
+  FULL_MARATHON
+  CUSTOM
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ABANDONED
+}
+
+enum ActivityType {
+  EASY_RUN
+  TEMPO
+  INTERVAL
+  LONG_RUN
+  REST
+  CROSS_TRAIN
+  RACE
+}
+
+enum PlanItemStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+  MODIFIED
+}
+
+enum CoachInteractionType {
+  GREETING
+  CHECK_IN
+  CONGRATULATION
+  PLAN_ADJUSTMENT
+  STREAK_WARNING
+  BADGE_AWARD
+}
+
+// ─── Running Coach Models ────────────────────────────────
+
+model RunnerProfile {
+  id                   String          @id @default(uuid())
+  email                String          @unique
+  passwordHash         String
+  name                 String
+  age                  Int?
+  weightKg             Float?
+  experienceLevel      ExperienceLevel @default(BEGINNER)
+  currentWeeklyKm      Float?
+  currentPaceMinPerKm  Float?          // e.g., 6.5 = 6:30/km
+  fitnessLevel         Int?            @default(5) // 1-10 scale
+  xpPoints             Int             @default(0)
+  level                Int             @default(1)
+  currentStreak        Int             @default(0)
+  longestStreak        Int             @default(0)
+  lastActiveDate       DateTime?
+  onboardingCompleted  Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  goals           RunningGoal[]
+  trainingPlans   TrainingPlan[]
+  activityLogs    ActivityLog[]
+  badges          RunnerBadge[]
+  coachInteractions CoachInteraction[]
+
+  @@map("runner_profiles")
+}
+
+model RunningGoal {
+  id             String     @id @default(uuid())
+  runnerId       String
+  goalType       GoalType
+  targetDistanceKm Float?
+  targetTimeMinutes Float?
+  targetDate     DateTime?
+  status         GoalStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  runner        RunnerProfile @relation(fields: [runnerId], references: [id], onDelete: Cascade)
+  trainingPlans TrainingPlan[]
+
+  @@index([runnerId])
+  @@index([status])
+  @@map("running_goals")
+}
+
+model TrainingPlan {
+  id              String         @id @default(uuid())
+  runnerId        String
+  goalId          String
+  weekNumber      Int
+  dayOfWeek       Int            // 1=Monday, 7=Sunday
+  activityType    ActivityType
+  targetDistanceKm Float?
+  targetPaceMinPerKm Float?
+  targetDurationMin Float?
+  description     String?
+  status          PlanItemStatus @default(PENDING)
+  scheduledDate   DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  runner       RunnerProfile @relation(fields: [runnerId], references: [id], onDelete: Cascade)
+  goal         RunningGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  activityLogs ActivityLog[]
+
+  @@index([runnerId])
+  @@index([goalId])
+  @@index([scheduledDate])
+  @@map("training_plans")
+}
+
+model ActivityLog {
+  id              String    @id @default(uuid())
+  runnerId        String
+  planItemId      String?   // null if unplanned/ad-hoc activity
+  date            DateTime
+  distanceKm      Float
+  durationMinutes Float
+  avgPaceMinPerKm Float?
+  effortLevel     Int?      // 1-10
+  notes           String?
+  wasPlanned      Boolean   @default(false)
+  xpEarned        Int       @default(0)
+  createdAt       DateTime  @default(now())
+
+  runner   RunnerProfile  @relation(fields: [runnerId], references: [id], onDelete: Cascade)
+  planItem TrainingPlan?  @relation(fields: [planItemId], references: [id], onDelete: SetNull)
+
+  @@index([runnerId])
+  @@index([date])
+  @@map("activity_logs")
+}
+
+model Badge {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String
+  iconName    String
+  xpReward    Int    @default(50)
+  criteria    String // JSON string describing unlock criteria
+
+  runners RunnerBadge[]
+
+  @@map("badges")
+}
+
+model RunnerBadge {
+  id       String   @id @default(uuid())
+  runnerId String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  runner RunnerProfile @relation(fields: [runnerId], references: [id], onDelete: Cascade)
+  badge  Badge         @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([runnerId, badgeId])
+  @@index([runnerId])
+  @@map("runner_badges")
+}
+
+model CoachInteraction {
+  id           String                @id @default(uuid())
+  runnerId     String
+  type         CoachInteractionType
+  message      String
+  userResponse String?
+  metadata     Json?
+  createdAt    DateTime              @default(now())
+
+  runner RunnerProfile @relation(fields: [runnerId], references: [id], onDelete: Cascade)
+
+  @@index([runnerId])
+  @@index([createdAt])
+  @@map("coach_interactions")
+}

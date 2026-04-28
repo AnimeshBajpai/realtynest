@@ -46,6 +46,10 @@ app.use(cookieParser());
 app.use('/api', generalLimiter);
 app.use('/api/auth', authLimiter);
 
+// Running Coach module (mounted before main /api routes to avoid auth conflicts)
+import runningCoachRouter from '../../running-coach/server/index.js';
+app.use('/api/running-coach', runningCoachRouter);
+
 // Routes
 app.use('/api', router);
 

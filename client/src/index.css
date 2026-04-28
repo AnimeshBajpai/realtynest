@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../running-coach/client/**/*.tsx";
 
 @theme {
   --color-primary: #4f46e5;
