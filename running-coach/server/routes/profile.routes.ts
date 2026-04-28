@@ -24,7 +24,7 @@ const onboardingSchema = z.object({
   currentWeeklyKm: z.number().min(0).optional().default(0),
   currentPaceMinPerKm: z.number().positive().optional().default(7),
   fitnessLevel: z.number().int().min(1).max(10).optional().default(3),
-  goalType: z.string().optional(),
+  goalType: z.string().min(1, 'Goal type is required'),
   targetTime: z.string().optional(),
   targetDate: z.string().optional(),
 });
@@ -81,41 +81,42 @@ router.put('/onboarding', async (req: Request, res: Response) => {
     const data = onboardingSchema.parse(req.body);
     const { goalType, targetTime, targetDate, ...profileData } = data;
 
-    const runner = await prisma.runnerProfile.update({
-      where: { id: req.runner!.id },
-      data: {
-        ...profileData,
-        onboardingCompleted: true,
-      },
-    });
+    // Use transaction to ensure profile + goal + plan are atomic
+    const result = await prisma.$transaction(async (tx) => {
+      const runner = await tx.runnerProfile.update({
+        where: { id: req.runner!.id },
+        data: {
+          ...profileData,
+          onboardingCompleted: true,
+        },
+      });
 
-    // Create a goal if goalType was provided
-    let createdGoal = null;
-    if (goalType) {
+      // Create goal (goalType is now required)
       const goalTypeMap: Record<string, string> = {
         distance: 'CUSTOM',
         time: 'CUSTOM',
         race: 'CUSTOM',
         consistency: 'CUSTOM',
       };
-      createdGoal = await prisma.runningGoal.create({
+
+      const parsedMinutes = targetTime ? parseFloat(targetTime) || undefined : undefined;
+
+      const createdGoal = await tx.runningGoal.create({
         data: {
           runnerId: req.runner!.id,
           goalType: (goalTypeMap[goalType] || 'CUSTOM') as any,
-          targetTime: targetTime || undefined,
+          targetTimeMinutes: parsedMinutes,
           targetDate: targetDate ? new Date(targetDate) : undefined,
           status: 'ACTIVE',
         },
       });
-    }
 
-    // Auto-generate week 1 of training plan after onboarding
+      return { runner, createdGoal };
+    });
+
+    // Auto-generate week 1 of training plan after onboarding (non-fatal)
     try {
-      if (createdGoal || await prisma.runningGoal.findFirst({
-        where: { runnerId: req.runner!.id, status: 'ACTIVE' },
-      })) {
-        await regenerateNextWeek(req.runner!.id);
-      }
+      await regenerateNextWeek(req.runner!.id);
     } catch (planErr) {
       console.error('Auto plan generation error (non-fatal):', planErr);
     }
@@ -141,7 +142,7 @@ router.put('/onboarding', async (req: Request, res: Response) => {
       console.error('Onboarding badge error (non-fatal):', badgeErr);
     }
 
-    const { passwordHash: _, ...profile } = runner;
+    const { passwordHash: _, ...profile } = result.runner;
     res.json(profile);
   } catch (err) {
     if (err instanceof z.ZodError) {
